@@ -238,7 +238,7 @@ const ClientForm = () => {
                     <SelectValue placeholder="Selecione um parceiro (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="none">Nenhum</SelectItem>
                     {partners.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nome}
