@@ -293,7 +293,7 @@ async def login(credentials: UserLogin):
     )
 
 @api_router.get("/auth/me", response_model=UserResponse)
-async def get_me(authorization: str = None):
+async def get_me(current_user = Depends(get_auth_user)):
     user = await get_current_user(authorization)
     return UserResponse(
         id=user["id"],
@@ -307,7 +307,7 @@ async def get_me(authorization: str = None):
 # ==================== USER ROUTES ====================
 
 @api_router.post("/users", response_model=UserResponse)
-async def create_user(user_data: UserCreate, authorization: str = None):
+async def create_user(user_data: UserCreate, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     # Check permissions
@@ -344,7 +344,7 @@ async def create_user(user_data: UserCreate, authorization: str = None):
     )
 
 @api_router.get("/users", response_model=List[UserResponse])
-async def list_users(authorization: str = None):
+async def list_users(current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -354,7 +354,7 @@ async def list_users(authorization: str = None):
     return [UserResponse(**u) for u in users]
 
 @api_router.put("/users/{user_id}")
-async def update_user(user_id: str, user_data: dict, authorization: str = None):
+async def update_user(user_id: str, user_data: dict, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
     
@@ -389,7 +389,7 @@ async def update_user(user_id: str, user_data: dict, authorization: str = None):
     return {"message": "Usuário atualizado com sucesso"}
 
 @api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str, authorization: str = None):
+async def delete_user(user_id: str, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
     
@@ -411,7 +411,7 @@ async def delete_user(user_id: str, authorization: str = None):
 # ==================== PARTNER ROUTES ====================
 
 @api_router.post("/partners", response_model=PartnerResponse)
-async def create_partner(partner_data: PartnerCreate, authorization: str = None):
+async def create_partner(partner_data: PartnerCreate, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -431,13 +431,13 @@ async def create_partner(partner_data: PartnerCreate, authorization: str = None)
     return PartnerResponse(**new_partner)
 
 @api_router.get("/partners", response_model=List[PartnerResponse])
-async def list_partners(authorization: str = None):
+async def list_partners(current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
     return [PartnerResponse(**p) for p in partners]
 
 @api_router.put("/partners/{partner_id}")
-async def update_partner(partner_id: str, partner_data: dict, authorization: str = None):
+async def update_partner(partner_id: str, partner_data: dict, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -455,7 +455,7 @@ async def update_partner(partner_id: str, partner_data: dict, authorization: str
     return {"message": "Parceiro atualizado com sucesso"}
 
 @api_router.delete("/partners/{partner_id}")
-async def delete_partner(partner_id: str, authorization: str = None):
+async def delete_partner(partner_id: str, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -467,7 +467,7 @@ async def delete_partner(partner_id: str, authorization: str = None):
 # ==================== CLIENT ROUTES ====================
 
 @api_router.post("/clients", response_model=ClientResponse)
-async def create_client(client_data: ClientCreate, authorization: str = None):
+async def create_client(client_data: ClientCreate, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     # Validate CPF format (basic)
@@ -510,7 +510,7 @@ async def create_client(client_data: ClientCreate, authorization: str = None):
 @api_router.get("/clients", response_model=List[ClientResponse])
 async def list_clients(
     search: Optional[str] = None,
-    authorization: str = None
+    current_user = Depends(get_auth_user)
 ):
     await get_current_user(authorization)
     
@@ -525,7 +525,7 @@ async def list_clients(
     return [ClientResponse(**c) for c in clients]
 
 @api_router.get("/clients/{client_id}", response_model=ClientResponse)
-async def get_client(client_id: str, authorization: str = None):
+async def get_client(client_id: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     client = await db.clients.find_one({"id": client_id}, {"_id": 0})
@@ -535,7 +535,7 @@ async def get_client(client_id: str, authorization: str = None):
     return ClientResponse(**client)
 
 @api_router.put("/clients/{client_id}")
-async def update_client(client_id: str, client_data: dict, authorization: str = None):
+async def update_client(client_id: str, client_data: dict, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     client = await db.clients.find_one({"id": client_id})
@@ -563,7 +563,7 @@ async def update_client(client_id: str, client_data: dict, authorization: str = 
     return {"message": "Cliente atualizado com sucesso"}
 
 @api_router.delete("/clients/{client_id}")
-async def delete_client(client_id: str, authorization: str = None):
+async def delete_client(client_id: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     # Check if client has active project
@@ -582,13 +582,13 @@ async def delete_client(client_id: str, authorization: str = None):
 # ==================== ETAPA ROUTES ====================
 
 @api_router.get("/etapas", response_model=List[EtapaResponse])
-async def list_etapas(authorization: str = None):
+async def list_etapas(current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(100)
     return [EtapaResponse(**e) for e in etapas]
 
 @api_router.post("/etapas", response_model=EtapaResponse)
-async def create_etapa(etapa_data: EtapaCreate, authorization: str = None):
+async def create_etapa(etapa_data: EtapaCreate, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -605,7 +605,7 @@ async def create_etapa(etapa_data: EtapaCreate, authorization: str = None):
     return EtapaResponse(**new_etapa)
 
 @api_router.put("/etapas/{etapa_id}")
-async def update_etapa(etapa_id: str, etapa_data: dict, authorization: str = None):
+async def update_etapa(etapa_id: str, etapa_data: dict, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -623,7 +623,7 @@ async def update_etapa(etapa_id: str, etapa_data: dict, authorization: str = Non
     return {"message": "Etapa atualizada com sucesso"}
 
 @api_router.delete("/etapas/{etapa_id}")
-async def delete_etapa(etapa_id: str, authorization: str = None):
+async def delete_etapa(etapa_id: str, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -635,7 +635,7 @@ async def delete_etapa(etapa_id: str, authorization: str = None):
 # ==================== PROJECT ROUTES ====================
 
 @api_router.post("/projects", response_model=ProjetoResponse)
-async def create_project(project_data: ProjetoCreate, authorization: str = None):
+async def create_project(project_data: ProjetoCreate, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     # Check if client exists
@@ -696,7 +696,7 @@ async def list_projects(
     ano: Optional[int] = None,
     nome: Optional[str] = None,
     pendencia: Optional[bool] = None,
-    authorization: str = None
+    current_user = Depends(get_auth_user)
 ):
     await get_current_user(authorization)
     
@@ -752,7 +752,7 @@ async def list_projects(
     return result
 
 @api_router.get("/projects/{project_id}", response_model=ProjetoResponse)
-async def get_project(project_id: str, authorization: str = None):
+async def get_project(project_id: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -783,7 +783,7 @@ async def get_project(project_id: str, authorization: str = None):
     )
 
 @api_router.put("/projects/{project_id}/next-stage")
-async def advance_project_stage(project_id: str, authorization: str = None):
+async def advance_project_stage(project_id: str, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -841,7 +841,7 @@ async def advance_project_stage(project_id: str, authorization: str = None):
     return {"message": "Projeto avançado para próxima etapa", "nova_etapa": next_etapa["nome"]}
 
 @api_router.put("/projects/{project_id}/archive")
-async def archive_project(project_id: str, authorization: str = None):
+async def archive_project(project_id: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -876,7 +876,7 @@ async def archive_project(project_id: str, authorization: str = None):
     return {"message": "Projeto arquivado com sucesso"}
 
 @api_router.put("/projects/{project_id}/cancel")
-async def cancel_project(project_id: str, data: dict, authorization: str = None):
+async def cancel_project(project_id: str, data: dict, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -904,7 +904,7 @@ async def cancel_project(project_id: str, data: dict, authorization: str = None)
     return {"message": "Projeto cancelado"}
 
 @api_router.post("/projects/{project_id}/pendencia")
-async def add_pendencia(project_id: str, data: dict, authorization: str = None):
+async def add_pendencia(project_id: str, data: dict, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -936,7 +936,7 @@ async def add_pendencia(project_id: str, data: dict, authorization: str = None):
     return {"message": "Pendência adicionada"}
 
 @api_router.put("/projects/{project_id}/pendencia/{pendencia_index}/resolve")
-async def resolve_pendencia(project_id: str, pendencia_index: int, authorization: str = None):
+async def resolve_pendencia(project_id: str, pendencia_index: int, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -962,7 +962,7 @@ async def resolve_pendencia(project_id: str, pendencia_index: int, authorization
     return {"message": "Pendência resolvida"}
 
 @api_router.post("/projects/{project_id}/observacao")
-async def add_observacao(project_id: str, data: dict, authorization: str = None):
+async def add_observacao(project_id: str, data: dict, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
@@ -991,7 +991,7 @@ async def add_observacao(project_id: str, data: dict, authorization: str = None)
     return {"message": "Observação adicionada"}
 
 @api_router.put("/projects/{project_id}/documents")
-async def update_documents_check(project_id: str, data: dict, authorization: str = None):
+async def update_documents_check(project_id: str, data: dict, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     project = await db.projects.find_one({"id": project_id})
@@ -1020,7 +1020,7 @@ async def update_documents_check(project_id: str, data: dict, authorization: str
 async def upload_file(
     client_id: str,
     file: UploadFile = File(...),
-    authorization: str = None
+    current_user = Depends(get_auth_user)
 ):
     await get_current_user(authorization)
     
@@ -1054,7 +1054,7 @@ async def upload_file(
     return {"message": "Arquivo enviado com sucesso", "filename": new_name}
 
 @api_router.get("/files/{client_id}")
-async def list_files(client_id: str, authorization: str = None):
+async def list_files(client_id: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     client_folder = UPLOAD_DIR / client_id
@@ -1074,7 +1074,7 @@ async def list_files(client_id: str, authorization: str = None):
     return {"files": files}
 
 @api_router.get("/files/{client_id}/{filename}")
-async def download_file(client_id: str, filename: str, authorization: str = None):
+async def download_file(client_id: str, filename: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     file_path = UPLOAD_DIR / client_id / filename
@@ -1084,7 +1084,7 @@ async def download_file(client_id: str, filename: str, authorization: str = None
     return FileResponse(file_path, filename=filename)
 
 @api_router.delete("/files/{client_id}/{filename}")
-async def delete_file(client_id: str, filename: str, authorization: str = None):
+async def delete_file(client_id: str, filename: str, current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     file_path = UPLOAD_DIR / client_id / filename
@@ -1096,7 +1096,7 @@ async def delete_file(client_id: str, filename: str, authorization: str = None):
 # ==================== CONFIG ROUTES ====================
 
 @api_router.get("/config")
-async def get_config(authorization: str = None):
+async def get_config(current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     config = await db.config.find_one({}, {"_id": 0})
     return config or {"logo_path": None, "campos_extras_cliente": []}
@@ -1104,7 +1104,7 @@ async def get_config(authorization: str = None):
 @api_router.post("/config/logo")
 async def upload_logo(
     file: UploadFile = File(...),
-    authorization: str = None
+    current_user = Depends(get_auth_user)
 ):
     current_user = await get_current_user(authorization)
     
@@ -1143,7 +1143,7 @@ async def get_logo_image():
     raise HTTPException(status_code=404, detail="Logo não encontrado")
 
 @api_router.put("/config/campos-extras")
-async def update_campos_extras(data: dict, authorization: str = None):
+async def update_campos_extras(data: dict, current_user = Depends(get_auth_user)):
     current_user = await get_current_user(authorization)
     
     if current_user["role"] == UserRole.ANALISTA:
@@ -1165,7 +1165,7 @@ async def get_reports_summary(
     pendencia: Optional[bool] = None,
     valor_min: Optional[float] = None,
     valor_max: Optional[float] = None,
-    authorization: str = None
+    current_user = Depends(get_auth_user)
 ):
     await get_current_user(authorization)
     
@@ -1256,7 +1256,7 @@ async def get_reports_summary(
     }
 
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(authorization: str = None):
+async def get_dashboard_stats(current_user = Depends(get_auth_user)):
     await get_current_user(authorization)
     
     # Get current month stats
