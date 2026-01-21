@@ -261,7 +261,7 @@ const Reports = () => {
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   {etapas.map((e) => (
                     <SelectItem key={e.id} value={e.id}>
                       {e.nome}
