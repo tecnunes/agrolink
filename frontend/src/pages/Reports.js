@@ -221,7 +221,7 @@ const Reports = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {months.map((m) => (
                     <SelectItem key={m.value} value={m.value}>
                       {m.label}
@@ -241,7 +241,7 @@ const Reports = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   {years.map((y) => (
                     <SelectItem key={y} value={y}>
                       {y}
@@ -303,7 +303,7 @@ const Reports = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="true">Sim</SelectItem>
                   <SelectItem value="false">Não</SelectItem>
                 </SelectContent>
