@@ -432,7 +432,7 @@ async def create_partner(partner_data: PartnerCreate, current_user = Depends(get
 
 @api_router.get("/partners", response_model=List[PartnerResponse])
 async def list_partners(current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     partners = await db.partners.find({}, {"_id": 0}).to_list(1000)
     return [PartnerResponse(**p) for p in partners]
 
@@ -468,7 +468,7 @@ async def delete_partner(partner_id: str, current_user = Depends(get_auth_user))
 
 @api_router.post("/clients", response_model=ClientResponse)
 async def create_client(client_data: ClientCreate, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     # Validate CPF format (basic)
     cpf_clean = re.sub(r'\D', '', client_data.cpf)
@@ -512,7 +512,7 @@ async def list_clients(
     search: Optional[str] = None,
     current_user = Depends(get_auth_user)
 ):
-    current_user
+    pass  # user auth verified
     
     query = {}
     if search:
@@ -526,7 +526,7 @@ async def list_clients(
 
 @api_router.get("/clients/{client_id}", response_model=ClientResponse)
 async def get_client(client_id: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     client = await db.clients.find_one({"id": client_id}, {"_id": 0})
     if not client:
@@ -536,7 +536,7 @@ async def get_client(client_id: str, current_user = Depends(get_auth_user)):
 
 @api_router.put("/clients/{client_id}")
 async def update_client(client_id: str, client_data: dict, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     client = await db.clients.find_one({"id": client_id})
     if not client:
@@ -564,7 +564,7 @@ async def update_client(client_id: str, client_data: dict, current_user = Depend
 
 @api_router.delete("/clients/{client_id}")
 async def delete_client(client_id: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     # Check if client has active project
     project = await db.projects.find_one({"cliente_id": client_id, "status": "em_andamento"})
@@ -583,7 +583,7 @@ async def delete_client(client_id: str, current_user = Depends(get_auth_user)):
 
 @api_router.get("/etapas", response_model=List[EtapaResponse])
 async def list_etapas(current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(100)
     return [EtapaResponse(**e) for e in etapas]
 
@@ -636,7 +636,7 @@ async def delete_etapa(etapa_id: str, current_user = Depends(get_auth_user)):
 
 @api_router.post("/projects", response_model=ProjetoResponse)
 async def create_project(project_data: ProjetoCreate, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     # Check if client exists
     client = await db.clients.find_one({"id": project_data.cliente_id}, {"_id": 0})
@@ -698,7 +698,7 @@ async def list_projects(
     pendencia: Optional[bool] = None,
     current_user = Depends(get_auth_user)
 ):
-    current_user
+    pass  # user auth verified
     
     query = {}
     if status:
@@ -753,7 +753,7 @@ async def list_projects(
 
 @api_router.get("/projects/{project_id}", response_model=ProjetoResponse)
 async def get_project(project_id: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
     if not project:
@@ -842,7 +842,7 @@ async def advance_project_stage(project_id: str, current_user = Depends(get_auth
 
 @api_router.put("/projects/{project_id}/archive")
 async def archive_project(project_id: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
     if not project:
@@ -877,7 +877,7 @@ async def archive_project(project_id: str, current_user = Depends(get_auth_user)
 
 @api_router.put("/projects/{project_id}/cancel")
 async def cancel_project(project_id: str, data: dict, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
     if not project:
@@ -937,7 +937,7 @@ async def add_pendencia(project_id: str, data: dict, current_user = Depends(get_
 
 @api_router.put("/projects/{project_id}/pendencia/{pendencia_index}/resolve")
 async def resolve_pendencia(project_id: str, pendencia_index: int, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     project = await db.projects.find_one({"id": project_id}, {"_id": 0})
     if not project:
@@ -992,7 +992,7 @@ async def add_observacao(project_id: str, data: dict, current_user = Depends(get
 
 @api_router.put("/projects/{project_id}/documents")
 async def update_documents_check(project_id: str, data: dict, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     project = await db.projects.find_one({"id": project_id})
     if not project:
@@ -1022,7 +1022,7 @@ async def upload_file(
     file: UploadFile = File(...),
     current_user = Depends(get_auth_user)
 ):
-    current_user
+    pass  # user auth verified
     
     # Check client exists
     client = await db.clients.find_one({"id": client_id})
@@ -1055,7 +1055,7 @@ async def upload_file(
 
 @api_router.get("/files/{client_id}")
 async def list_files(client_id: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     client_folder = UPLOAD_DIR / client_id
     if not client_folder.exists():
@@ -1075,7 +1075,7 @@ async def list_files(client_id: str, current_user = Depends(get_auth_user)):
 
 @api_router.get("/files/{client_id}/{filename}")
 async def download_file(client_id: str, filename: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     file_path = UPLOAD_DIR / client_id / filename
     if not file_path.exists():
@@ -1085,7 +1085,7 @@ async def download_file(client_id: str, filename: str, current_user = Depends(ge
 
 @api_router.delete("/files/{client_id}/{filename}")
 async def delete_file(client_id: str, filename: str, current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     file_path = UPLOAD_DIR / client_id / filename
     if file_path.exists():
@@ -1097,7 +1097,7 @@ async def delete_file(client_id: str, filename: str, current_user = Depends(get_
 
 @api_router.get("/config")
 async def get_config(current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     config = await db.config.find_one({}, {"_id": 0})
     return config or {"logo_path": None, "campos_extras_cliente": []}
 
@@ -1167,7 +1167,7 @@ async def get_reports_summary(
     valor_max: Optional[float] = None,
     current_user = Depends(get_auth_user)
 ):
-    current_user
+    pass  # user auth verified
     
     query = {}
     
@@ -1257,7 +1257,7 @@ async def get_reports_summary(
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user = Depends(get_auth_user)):
-    current_user
+    pass  # user auth verified
     
     # Get current month stats
     now = datetime.now(timezone.utc)
