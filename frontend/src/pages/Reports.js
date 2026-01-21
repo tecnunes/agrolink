@@ -54,9 +54,9 @@ const Reports = () => {
     try {
       setLoading(true);
       const params = {};
-      if (filters.mes) params.mes = parseInt(filters.mes);
-      if (filters.ano) params.ano = parseInt(filters.ano);
-      if (filters.etapa_id) params.etapa_id = filters.etapa_id;
+      if (filters.mes && filters.mes !== 'all') params.mes = parseInt(filters.mes);
+      if (filters.ano && filters.ano !== 'all') params.ano = parseInt(filters.ano);
+      if (filters.etapa_id && filters.etapa_id !== 'all') params.etapa_id = filters.etapa_id;
       if (filters.pendencia !== null) params.pendencia = filters.pendencia;
       if (filters.valor_min) params.valor_min = parseFloat(filters.valor_min);
       if (filters.valor_max) params.valor_max = parseFloat(filters.valor_max);
