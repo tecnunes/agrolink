@@ -206,7 +206,7 @@ async def get_current_user(authorization: str = Header(None)):
 
 async def get_auth_user(authorization: str = Header(None)):
     """Wrapper to get current user from header"""
-    return current_user
+    return await get_current_user(authorization)
 
 def require_role(allowed_roles: List[str]):
     async def check_role(token: str = None):
