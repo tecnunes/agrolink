@@ -204,6 +204,10 @@ async def get_current_user(authorization: str = Header(None)):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
 
+async def get_auth_user(authorization: str = Header(None)):
+    """Wrapper to get current user from header"""
+    return await get_current_user(authorization)
+
 def require_role(allowed_roles: List[str]):
     async def check_role(token: str = None):
         user = await get_current_user(token)
