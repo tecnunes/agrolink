@@ -112,7 +112,7 @@ const ClientForm = () => {
         cpf: cpfClean,
         telefone: formData.telefone.replace(/\D/g, ''),
         valor_credito: parseFloat(formData.valor_credito),
-        parceiro_id: formData.parceiro_id || null,
+        parceiro_id: formData.parceiro_id === "none" ? null : formData.parceiro_id || null,
       };
 
       if (isEditing) {
