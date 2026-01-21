@@ -1,0 +1,135 @@
+{
+  "identity": {
+    "name": "AgroLink",
+    "archetype": "Organic & Earthy (Archetype 1) + Swiss High-Contrast (Archetype 4)",
+    "tone": "Professional, Trustworthy, Growth-Oriented, Precision",
+    "primary_audience": "Agri-business professionals, Credit Analysts, System Admins"
+  },
+  "typography": {
+    "headings": {
+      "family": "Manrope, sans-serif",
+      "weights": ["600", "700", "800"],
+      "usage": "Use for all page titles, widget headers, and modal titles. Tracking tight."
+    },
+    "body": {
+      "family": "Inter, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Use for data tables, form inputs, and general text. Tracking normal."
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Use for credit protocol numbers, transaction IDs, and financial data."
+    }
+  },
+  "colors": {
+    "light_mode": {
+      "background": "#F5F5F4",
+      "foreground": "#1C1917",
+      "primary": "#14532D",
+      "primary_foreground": "#F0FDF4",
+      "secondary": "#E7E5E4",
+      "secondary_foreground": "#292524",
+      "accent": "#D97706",
+      "accent_foreground": "#FFFFFF",
+      "muted": "#F5F5F4",
+      "muted_foreground": "#78716C",
+      "border": "#E7E5E4",
+      "card": "#FFFFFF"
+    },
+    "dark_mode": {
+      "background": "#0C0A09",
+      "foreground": "#FAFAF9",
+      "primary": "#22C55E",
+      "primary_foreground": "#022C22",
+      "secondary": "#292524",
+      "secondary_foreground": "#FAFAF9",
+      "accent": "#F59E0B",
+      "accent_foreground": "#000000",
+      "muted": "#1C1917",
+      "muted_foreground": "#A8A29E",
+      "border": "#292524",
+      "card": "#1C1917"
+    },
+    "status": {
+      "success": "#15803D",
+      "warning": "#B45309",
+      "error": "#B91C1C",
+      "info": "#0369A1"
+    }
+  },
+  "layout_strategy": {
+    "dashboard_grid": {
+      "type": "Bento Grid Mode B (High Density)",
+      "columns": "grid-cols-1 md:grid-cols-4 lg:grid-cols-12",
+      "gap": "gap-4",
+      "rules": [
+        "Summary Cards: col-span-1 md:col-span-2 lg:col-span-3",
+        "Main Chart: col-span-full lg:col-span-8 row-span-2",
+        "Recent Activity: col-span-full lg:col-span-4 row-span-2",
+        "Use h-full on all cards to ensure equal height alignment."
+      ]
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-8 lg:p-10",
+      "section_gap": "gap-8",
+      "internal_card_padding": "p-6"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "Sharp corners or slightly rounded (rounded-md).",
+      "variants": {
+        "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+        "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        "ghost": "hover:bg-accent hover:text-accent-foreground"
+      }
+    },
+    "cards": {
+      "style": "Flat background, 1px subtle border (border-border), no shadow or very subtle shadow-sm.",
+      "hover": "hover:border-primary/50 transition-colors duration-200"
+    },
+    "inputs": {
+      "style": "bg-background border-input focus:ring-2 focus:ring-primary/20 focus:border-primary"
+    },
+    "timeline": {
+      "style": "Vertical step progress. Connected lines. Active step highlighted with Primary color. Completed steps with Check icon.",
+      "orientation": "Vertical for details view, Horizontal for summary view."
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Use subtle grain overlay on the sidebar or dark mode background to reduce digital flatness.",
+    "glassmorphism": "Use backdrop-blur-md bg-background/80 for sticky headers and modal overlays.",
+    "borders": "Use 'Tracing Beam' effect for active project cards or high-priority alerts."
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "Hero/Dashboard Background",
+        "url": "https://images.unsplash.com/photo-1651947368468-ac261dcce643?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxhZ3JpY3VsdHVyYWwlMjBmaWVsZCUyMGRyb25lJTIwdmlld3xlbnwwfHx8fDE3NjkwMzc4Mjl8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Drone view of green agricultural field. Use for login page background or dashboard header overlay."
+      },
+      {
+        "category": "Login/Feature",
+        "url": "https://images.unsplash.com/photo-1744230673231-865d54a0aba4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxmYXJtZXIlMjB1c2luZyUyMHRhYmxldCUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzY5MDM3ODMxfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Farmer using tablet with AI technology. Use for 'Digital Transformation' or 'Mobile Access' feature section."
+      },
+      {
+        "category": "Atmosphere/Success",
+        "url": "https://images.unsplash.com/photo-1634433545797-c18dd170e75e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwxfHxzb3liZWFuJTIwaGFydmVzdCUyMHN1bnNldHxlbnwwfHx8fDE3NjkwMzc4MzN8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Combine harvester at sunset. Use for 'Project Completion' or 'Harvest' metaphors."
+      }
+    ],
+    "icons": "Use Lucide React (default). For specialized agri-icons, use Phosphor Icons if needed."
+  },
+  "universal_guidelines": [
+    "DO NOT use gradients for main backgrounds. Use solid colors or subtle textures.",
+    "Ensure all text has a contrast ratio of at least 4.5:1 against its background.",
+    "All interactive elements MUST have a `data-testid` attribute (kebab-case).",
+    "Use `sonner` for all toast notifications.",
+    "Use `shadcn` components for all interactive UI elements (forms, dialogs, dropdowns).",
+    "Do not center-align main dashboard content; use left alignment for readability.",
+    "Add micro-interactions (hover, focus, active) to all clickable elements.",
+    "Respect the 'Bento' grid layout; avoid equal-width columns everywhere."
+  ],
+  "instructions_to_main_agent": "You are building the AgroLink CRM. Start by setting up the layout shell (Sidebar + Header). Then build the Dashboard with the Bento grid. Use the provided images for the Login page and empty states. Ensure the Dark/Light mode toggle works using the existing Tailwind config. Focus on the 'Project Timeline' component as it is the core feature."
+}
