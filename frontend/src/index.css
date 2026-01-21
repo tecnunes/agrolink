@@ -151,21 +151,42 @@
 
 /* Timeline styles */
 .timeline-line {
-    @apply absolute left-4 top-0 bottom-0 w-0.5 bg-border;
+    position: absolute;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: hsl(var(--border));
 }
 
 .timeline-dot {
-    @apply absolute left-2 w-5 h-5 rounded-full border-2 bg-background flex items-center justify-center z-10;
+    position: absolute;
+    left: 0.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    border-width: 2px;
+    background-color: hsl(var(--background));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
 }
 
 .timeline-dot.active {
-    @apply border-primary bg-primary text-primary-foreground;
+    border-color: hsl(var(--primary));
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
 }
 
 .timeline-dot.completed {
-    @apply border-success bg-success text-white;
+    border-color: #15803D;
+    background-color: #15803D;
+    color: white;
 }
 
 .timeline-dot.pending {
-    @apply border-warning bg-warning text-white;
+    border-color: #B45309;
+    background-color: #B45309;
+    color: white;
 }
