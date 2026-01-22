@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 
 class AgroLinkAPITester:
-    def __init__(self, base_url="https://credit-tracker-91.preview.emergentagent.com"):
+    def __init__(self, base_url="https://creditrural-app.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.tests_run = 0
