@@ -1314,6 +1314,13 @@ async def get_dashboard_stats(current_user = Depends(get_auth_user)):
     projects = await db.projects.find({"status": "em_andamento"}, {"_id": 0}).to_list(10000)
     com_pendencia = 0
     total_credito = 0
+    total_servico = 0
+    
+    # Get all projects (including archived) for total service value
+    all_projects = await db.projects.find({}, {"_id": 0}).to_list(10000)
+    for proj in all_projects:
+        if proj.get("valor_servico"):
+            total_servico += proj.get("valor_servico", 0)
     
     for proj in projects:
         client = await db.clients.find_one({"id": proj["cliente_id"]}, {"_id": 0})
@@ -1327,9 +1334,32 @@ async def get_dashboard_stats(current_user = Depends(get_auth_user)):
                     tem_pendencia = True
                     break
         
+        # Check pendencias based on current stage
         docs = proj.get("documentos_check", {})
-        if not all([docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
-            tem_pendencia = True
+        etapa_nome = proj.get("etapa_atual_nome", "")
+        
+        # Verificar pendências de acordo com a etapa atual
+        if "Coleta de Documentos" in etapa_nome:
+            if not all([docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
+                tem_pendencia = True
+        elif "Desenvolvimento do Projeto" in etapa_nome:
+            if not docs.get("projeto_implementado"):
+                tem_pendencia = True
+        elif "Coletar Assinaturas" in etapa_nome:
+            if not docs.get("projeto_assinado"):
+                tem_pendencia = True
+        elif "Protocolo CENOP" in etapa_nome:
+            if not docs.get("projeto_protocolado"):
+                tem_pendencia = True
+        elif "Instrumento de Crédito" in etapa_nome:
+            if not all([docs.get("assinatura_agencia"), docs.get("upload_contrato")]):
+                tem_pendencia = True
+        elif "GTA e Nota Fiscal" in etapa_nome:
+            if not all([docs.get("gta_emitido"), docs.get("nota_fiscal_emitida")]):
+                tem_pendencia = True
+        elif "Projeto Creditado" in etapa_nome:
+            if not docs.get("comprovante_servico_pago"):
+                tem_pendencia = True
         
         if tem_pendencia:
             com_pendencia += 1
@@ -1340,7 +1370,8 @@ async def get_dashboard_stats(current_user = Depends(get_auth_user)):
         "projetos_finalizados_mes": archived_this_month,
         "total_clientes": total_clients,
         "projetos_com_pendencia": com_pendencia,
-        "valor_total_credito": total_credito
+        "valor_total_credito": total_credito,
+        "valor_total_servico": total_servico
     }
 
 # Include the router in the main app
