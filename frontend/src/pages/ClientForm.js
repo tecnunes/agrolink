@@ -162,6 +162,8 @@ const ClientForm = () => {
         telefone: formData.telefone.replace(/\D/g, ''),
         data_nascimento: formData.data_nascimento || null,
         parceiro_id: formData.parceiro_id || null,
+        estado: formData.estado || null,
+        cidade: formData.cidade || null,
       };
 
       if (isEditing) {
