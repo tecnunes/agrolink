@@ -232,6 +232,14 @@ const Propostas = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('kanban'); // 'table' or 'kanban'
   
+  // Novo: Tab para o modal (selecionar existente ou criar novo)
+  const [clientTab, setClientTab] = useState('existente');
+  const [clients, setClients] = useState([]);
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
+  const [loadingClients, setLoadingClients] = useState(false);
+  
   const [formData, setFormData] = useState({
     nome_completo: '',
     cpf: '',
