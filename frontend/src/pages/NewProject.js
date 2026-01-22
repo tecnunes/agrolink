@@ -87,7 +87,8 @@ const NewProject = () => {
     setSelectedClient(client);
     setConfirmDialog(true);
     setValorCredito('');
-    setTipoProjeto('PRONAF A');
+    setTipoProjetoId('');
+    setInstituicaoId('');
   };
 
   const handleCreateProject = async () => {
@@ -97,13 +98,26 @@ const NewProject = () => {
       toast.error('Informe o valor do crédito');
       return;
     }
+    
+    if (!tipoProjetoId) {
+      toast.error('Selecione o tipo de projeto');
+      return;
+    }
+    
+    if (!instituicaoId) {
+      toast.error('Selecione a instituição financeira');
+      return;
+    }
 
     try {
       setCreating(true);
+      const tipoSelecionado = tiposProjeto.find(t => t.id === tipoProjetoId);
       await projectsAPI.create({ 
         cliente_id: selectedClient.id,
         valor_credito: parseFloat(valorCredito),
-        tipo_projeto: tipoProjeto
+        tipo_projeto: tipoSelecionado?.nome || 'PRONAF A',
+        tipo_projeto_id: tipoProjetoId,
+        instituicao_financeira_id: instituicaoId,
       });
       toast.success('Projeto iniciado com sucesso!');
       navigate('/');
