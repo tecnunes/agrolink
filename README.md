@@ -11,8 +11,16 @@ Sistema CRM para controle e acompanhamento de clientes que desejam fazer emprés
 - Validação de documentos com checklist
 
 ### Fluxo de Projetos
-- Etapas configuráveis: Cadastro → Coleta de Documentos → Desenvolvimento do Projeto → Coletar Assinaturas → Protocolo CENOP → Instrumento de Crédito → Projeto Creditado
+- Etapas configuráveis: Cadastro → Coleta de Documentos → Desenvolvimento do Projeto → Coletar Assinaturas → Protocolo CENOP → Instrumento de Crédito → GTA e Nota Fiscal → Projeto Creditado
 - Timeline interativo com duração por etapa
+- Checkboxes específicos por etapa:
+  - **Coleta de Documentos**: CCU/Título, Saldo IAGRO, CAR
+  - **Desenvolvimento do Projeto**: Projeto Implementado
+  - **Coletar Assinaturas**: Projeto Assinado
+  - **Protocolo CENOP**: Projeto Protocolado
+  - **Instrumento de Crédito**: Assinatura na Agência, Upload Contrato, Número do Contrato
+  - **GTA e Nota Fiscal**: GTA Emitido, Nota Fiscal Emitida
+  - **Projeto Creditado**: Comprovante de Serviço Pago, Valor do Serviço
 - Gestão de pendências e observações
 - Opção de desistência com motivo
 - Arquivamento de projetos finalizados
