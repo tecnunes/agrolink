@@ -107,9 +107,24 @@ class ClientResponse(ClientBase):
     parceiro_nome: Optional[str] = None
 
 class DocumentoCheck(BaseModel):
+    # Etapa Coleta de Documentos
     ccu_titulo: bool = False
     saldo_iagro: bool = False
     car: bool = False
+    # Etapa Desenvolvimento do Projeto
+    projeto_implementado: bool = False
+    # Etapa Coletar Assinaturas
+    projeto_assinado: bool = False
+    # Etapa Protocolo CENOP
+    projeto_protocolado: bool = False
+    # Etapa Instrumento de Crédito
+    assinatura_agencia: bool = False
+    upload_contrato: bool = False
+    # Etapa GTA e Nota Fiscal
+    gta_emitido: bool = False
+    nota_fiscal_emitida: bool = False
+    # Etapa Projeto Creditado
+    comprovante_servico_pago: bool = False
 
 class PendenciaBase(BaseModel):
     descricao: str
