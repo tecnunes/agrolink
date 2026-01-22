@@ -92,6 +92,12 @@ export const filesAPI = {
   delete: (clientId, filename) => api.delete(`/files/${clientId}/${filename}`),
 };
 
+// Alerts
+export const alertsAPI = {
+  getAll: () => api.get('/alerts/all'),
+  check: () => api.get('/alerts'),
+};
+
 // Config
 export const configAPI = {
   get: () => api.get('/config'),
