@@ -54,6 +54,7 @@ export const clientsAPI = {
   create: (data) => api.post('/clients', data),
   update: (id, data) => api.put(`/clients/${id}`, data),
   delete: (id) => api.delete(`/clients/${id}`),
+  getHistory: (id) => api.get(`/clients/${id}/history`),
 };
 
 // Etapas
