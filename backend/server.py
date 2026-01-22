@@ -1423,6 +1423,98 @@ async def get_dashboard_stats(current_user = Depends(get_auth_user)):
         "valor_total_servico": total_servico
     }
 
+@api_router.get("/alerts")
+async def get_alerts(current_user = Depends(get_auth_user)):
+    """Get clients without active projects that need follow-up"""
+    pass  # user auth verified
+    
+    now = datetime.now(timezone.utc)
+    three_days_ago = (now - timedelta(days=3)).isoformat()
+    
+    # Get all clients
+    clients = await db.clients.find({}, {"_id": 0}).to_list(10000)
+    
+    alerts = []
+    for client in clients:
+        # Check if client has active project
+        active_project = await db.projects.find_one({
+            "cliente_id": client["id"],
+            "status": "em_andamento"
+        })
+        
+        if not active_project:
+            qtd_alertas = client.get("qtd_alertas", 0)
+            ultimo_alerta = client.get("ultimo_alerta")
+            
+            # Only alert up to 3 times, with 3 day intervals
+            if qtd_alertas < 3:
+                should_alert = False
+                
+                if ultimo_alerta is None:
+                    should_alert = True
+                else:
+                    # Check if 3 days have passed since last alert
+                    ultimo_dt = datetime.fromisoformat(ultimo_alerta.replace('Z', '+00:00'))
+                    if (now - ultimo_dt).days >= 3:
+                        should_alert = True
+                
+                if should_alert:
+                    # Update alert count
+                    await db.clients.update_one(
+                        {"id": client["id"]},
+                        {"$set": {
+                            "ultimo_alerta": now.isoformat(),
+                            "qtd_alertas": qtd_alertas + 1
+                        }}
+                    )
+                    
+                    alerts.append({
+                        "id": client["id"],
+                        "cliente_nome": client["nome_completo"],
+                        "cliente_cpf": client["cpf"],
+                        "telefone": client.get("telefone"),
+                        "data_cadastro": client.get("created_at"),
+                        "alerta_numero": qtd_alertas + 1,
+                        "mensagem": f"Cliente cadastrado há {(now - datetime.fromisoformat(client.get('created_at', now.isoformat()).replace('Z', '+00:00'))).days} dias sem projeto ativo"
+                    })
+    
+    return {"alerts": alerts}
+
+@api_router.get("/alerts/all")
+async def get_all_pending_alerts(current_user = Depends(get_auth_user)):
+    """Get all clients without active projects"""
+    pass  # user auth verified
+    
+    now = datetime.now(timezone.utc)
+    
+    # Get all clients
+    clients = await db.clients.find({}, {"_id": 0}).to_list(10000)
+    
+    alerts = []
+    for client in clients:
+        # Check if client has active project
+        active_project = await db.projects.find_one({
+            "cliente_id": client["id"],
+            "status": "em_andamento"
+        })
+        
+        if not active_project:
+            qtd_alertas = client.get("qtd_alertas", 0)
+            if qtd_alertas < 3:  # Still within alert limit
+                days_since_created = (now - datetime.fromisoformat(client.get('created_at', now.isoformat()).replace('Z', '+00:00'))).days
+                alerts.append({
+                    "id": client["id"],
+                    "cliente_nome": client["nome_completo"],
+                    "cliente_cpf": client["cpf"],
+                    "telefone": client.get("telefone"),
+                    "data_cadastro": client.get("created_at"),
+                    "dias_sem_projeto": days_since_created,
+                    "alerta_numero": qtd_alertas,
+                    "mensagem": f"Cliente cadastrado há {days_since_created} dias sem projeto ativo"
+                })
+    
+    return {"alerts": alerts, "total": len(alerts)}
+
 # Include the router in the main app
 app.include_router(api_router)
 
