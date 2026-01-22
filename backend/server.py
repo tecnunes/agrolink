@@ -262,7 +262,8 @@ async def init_default_data():
             {"id": str(uuid.uuid4()), "nome": "Coletar Assinaturas", "ordem": 4, "ativo": True},
             {"id": str(uuid.uuid4()), "nome": "Protocolo CENOP", "ordem": 5, "ativo": True},
             {"id": str(uuid.uuid4()), "nome": "Instrumento de Crédito", "ordem": 6, "ativo": True},
-            {"id": str(uuid.uuid4()), "nome": "Projeto Creditado", "ordem": 7, "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "GTA e Nota Fiscal", "ordem": 7, "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Projeto Creditado", "ordem": 8, "ativo": True},
         ]
         await db.etapas.insert_many(default_etapas)
     
