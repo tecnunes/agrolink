@@ -292,51 +292,8 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
         </div>
       </div>
 
-      {/* Documents Check */}
-      <div className="p-4 rounded-lg border bg-muted/30">
-        <h4 className="font-medium mb-3">Documentos Obrigatórios</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="ccu"
-              checked={project.documentos_check?.ccu_titulo}
-              onCheckedChange={(v) => handleDocumentCheck('ccu_titulo', v)}
-              data-testid="doc-ccu"
-            />
-            <Label htmlFor="ccu" className="text-sm cursor-pointer">
-              CCU / Título / Contrato / Escritura
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="iagro"
-              checked={project.documentos_check?.saldo_iagro}
-              onCheckedChange={(v) => handleDocumentCheck('saldo_iagro', v)}
-              data-testid="doc-iagro"
-            />
-            <Label htmlFor="iagro" className="text-sm cursor-pointer">
-              Saldo IAGRO
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="car"
-              checked={project.documentos_check?.car}
-              onCheckedChange={(v) => handleDocumentCheck('car', v)}
-              data-testid="doc-car"
-            />
-            <Label htmlFor="car" className="text-sm cursor-pointer">
-              CAR
-            </Label>
-          </div>
-        </div>
-        {!project.documentos_check?.ccu_titulo || !project.documentos_check?.saldo_iagro || !project.documentos_check?.car ? (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            Documentos pendentes
-          </p>
-        ) : null}
-      </div>
+      {/* Stage-specific Checklist */}
+      {renderStageChecklist()}
 
       {/* Pendências */}
       {pendencias.length > 0 && (
