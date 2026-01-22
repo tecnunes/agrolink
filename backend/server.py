@@ -862,6 +862,63 @@ async def advance_project_stage(project_id: str, current_user = Depends(get_auth
     if project["status"] != "em_andamento":
         raise HTTPException(status_code=400, detail="Projeto não está em andamento")
     
+    # Check for pending requirements based on current stage
+    docs = project.get("documentos_check", {})
+    etapa_nome = project.get("etapa_atual_nome", "")
+    
+    # Check pendencies on current stage
+    pendencias_etapa = []
+    
+    # Check for unresolved pendencies
+    historico = project.get("historico_etapas", [])
+    if historico:
+        current_hist = historico[-1]
+        for pend in current_hist.get("pendencias", []):
+            if not pend.get("resolvida", False):
+                pendencias_etapa.append("Existem pendências não resolvidas")
+                break
+    
+    # Check stage-specific requirements
+    if "Coleta de Documentos" in etapa_nome:
+        if not docs.get("rg_cnh"):
+            pendencias_etapa.append("RG ou CNH não verificado")
+        if not docs.get("conta_banco_brasil"):
+            pendencias_etapa.append("Conta Banco do Brasil não verificada")
+        if not docs.get("ccu_titulo"):
+            pendencias_etapa.append("CCU/Título não verificado")
+        if not docs.get("saldo_iagro"):
+            pendencias_etapa.append("Saldo IAGRO não verificado")
+        if not docs.get("car"):
+            pendencias_etapa.append("CAR não verificado")
+    elif "Desenvolvimento do Projeto" in etapa_nome:
+        if not docs.get("projeto_implementado"):
+            pendencias_etapa.append("Projeto não implementado")
+    elif "Coletar Assinaturas" in etapa_nome:
+        if not docs.get("projeto_assinado"):
+            pendencias_etapa.append("Projeto não assinado")
+    elif "Protocolo CENOP" in etapa_nome:
+        if not docs.get("projeto_protocolado"):
+            pendencias_etapa.append("Projeto não protocolado")
+    elif "Instrumento de Crédito" in etapa_nome:
+        if not docs.get("assinatura_agencia"):
+            pendencias_etapa.append("Assinatura na agência pendente")
+        if not docs.get("upload_contrato"):
+            pendencias_etapa.append("Upload do contrato pendente")
+    elif "GTA e Nota Fiscal" in etapa_nome:
+        if not docs.get("gta_emitido"):
+            pendencias_etapa.append("GTA não emitido")
+        if not docs.get("nota_fiscal_emitida"):
+            pendencias_etapa.append("Nota fiscal não emitida")
+    elif "Projeto Creditado" in etapa_nome:
+        if not docs.get("comprovante_servico_pago"):
+            pendencias_etapa.append("Comprovante de serviço não pago")
+    
+    if pendencias_etapa:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Não é possível avançar. Pendências: {', '.join(pendencias_etapa)}"
+        )
+    
     # Get current stage order
     current_etapa = await db.etapas.find_one({"id": project["etapa_atual_id"]}, {"_id": 0})
     if not current_etapa:
@@ -880,7 +937,6 @@ async def advance_project_stage(project_id: str, current_user = Depends(get_auth
     now = datetime.now(timezone.utc)
     
     # Update current stage end date and calculate duration
-    historico = project.get("historico_etapas", [])
     if historico:
         last_etapa = historico[-1]
         start = datetime.fromisoformat(last_etapa["data_inicio"].replace('Z', '+00:00'))
