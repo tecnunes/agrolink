@@ -521,13 +521,14 @@ async def create_client(client_data: ClientCreate, current_user = Depends(get_au
         "id": str(uuid.uuid4()),
         "nome_completo": client_data.nome_completo.upper(),
         "cpf": cpf_clean,
-        "endereco": client_data.endereco,
+        "endereco": client_data.endereco or "",
         "telefone": client_data.telefone,
-        "data_nascimento": client_data.data_nascimento,
-        "valor_credito": client_data.valor_credito,
+        "data_nascimento": client_data.data_nascimento or "",
         "parceiro_id": client_data.parceiro_id,
         "parceiro_nome": parceiro_nome,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "ultimo_alerta": None,
+        "qtd_alertas": 0
     }
     
     await db.clients.insert_one(new_client)
