@@ -318,6 +318,9 @@ const Layout = ({ children }) => {
 
             <div className="flex-1" />
 
+            {/* Notification Bell */}
+            <NotificationBell />
+
             {/* Theme toggle */}
             <Button
               variant="ghost"
