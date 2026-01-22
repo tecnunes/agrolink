@@ -185,6 +185,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/eliminar-dados"
+        element={
+          <ProtectedRoute adminOnly>
+            <EliminarDados />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
