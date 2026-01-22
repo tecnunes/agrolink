@@ -7,18 +7,17 @@ import { Input } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
 import { Skeleton } from '../components/ui/skeleton';
+import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
-import { Search, Plus, Edit, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Users, MessageCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const formatCPF = (cpf) => {
   return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 };
 
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(value);
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('pt-BR');
 };
 
 const ClientList = () => {
@@ -55,6 +54,16 @@ const ClientList = () => {
       loadClients(search);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao excluir cliente');
+    }
+  };
+
+  const openWhatsApp = (telefone) => {
+    const phone = telefone.replace(/\D/g, '');
+    if (phone.length >= 10) {
+      const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+      window.open(`https://wa.me/${formattedPhone}`, '_blank');
+    } else {
+      toast.error('Telefone inválido para WhatsApp');
     }
   };
 
@@ -110,15 +119,16 @@ const ClientList = () => {
                     <TableHead>Nome</TableHead>
                     <TableHead className="hidden sm:table-cell">CPF</TableHead>
                     <TableHead className="hidden md:table-cell">Telefone</TableHead>
-                    <TableHead className="hidden lg:table-cell">Valor Crédito</TableHead>
+                    <TableHead className="hidden lg:table-cell">Data Cadastro</TableHead>
                     <TableHead className="hidden lg:table-cell">Parceiro</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
+                    <TableHead>Projeto</TableHead>
+                    <TableHead className="w-32">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {clients.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         Nenhum cliente encontrado
                       </TableCell>
                     </TableRow>
@@ -129,15 +139,39 @@ const ClientList = () => {
                         <TableCell className="hidden sm:table-cell mono text-sm">
                           {formatCPF(client.cpf)}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">{client.telefone}</TableCell>
+                        <TableCell className="hidden md:table-cell">{client.telefone || '-'}</TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          {formatCurrency(client.valor_credito)}
+                          {formatDate(client.created_at)}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
                           {client.parceiro_nome || '-'}
                         </TableCell>
                         <TableCell>
+                          {client.tem_projeto_ativo ? (
+                            <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                              <CheckCircle className="w-3 h-3" />
+                              Ativo
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="gap-1 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                              <AlertTriangle className="w-3 h-3" />
+                              Sem projeto
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-1">
+                            {client.telefone && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => openWhatsApp(client.telefone)}
+                                data-testid={`whatsapp-client-${client.id}`}
+                                title="Abrir WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4 text-green-600" />
+                              </Button>
+                            )}
                             <Button
                               size="icon"
                               variant="ghost"
