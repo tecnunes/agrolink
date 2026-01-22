@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import React, { useState, useCallback } from 'react';
+import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { toast } from 'sonner';
+import { projectsAPI } from '../lib/api';
 import {
   Clock,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   MessageCircle,
-  ChevronRight,
   DollarSign,
-  Building2,
   User,
-  FileText,
   StickyNote,
+  GripVertical,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ProjectTimeline from './ProjectTimeline';
@@ -29,7 +28,7 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-const KanbanCard = ({ project, onClick, onWhatsApp }) => {
+const KanbanCard = ({ project, onClick, onWhatsApp, onDragStart, onDragEnd, isDragging }) => {
   // Get current stage pendencias and observacoes
   const currentHistorico = project.historico_etapas?.find(
     h => h.etapa_id === project.etapa_atual_id
@@ -41,18 +40,27 @@ const KanbanCard = ({ project, onClick, onWhatsApp }) => {
   return (
     <Card
       className={cn(
-        'cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
-        project.tem_pendencia && 'border-red-500/50 bg-red-500/5'
+        'cursor-pointer transition-all duration-200 hover:shadow-md',
+        project.tem_pendencia && 'border-red-500/50 bg-red-500/5',
+        isDragging && 'opacity-50 rotate-2 scale-105 shadow-lg'
       )}
       onClick={onClick}
+      draggable={!project.tem_pendencia}
+      onDragStart={(e) => onDragStart(e, project)}
+      onDragEnd={onDragEnd}
       data-testid={`kanban-card-${project.id}`}
     >
       <CardContent className="p-3 space-y-2">
-        {/* Tipo do Projeto */}
+        {/* Tipo do Projeto + Drag Handle */}
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="text-xs font-semibold bg-primary/10 text-primary border-primary/30">
-            {project.tipo_projeto || 'PRONAF'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {!project.tem_pendencia && (
+              <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
+            )}
+            <Badge variant="outline" className="text-xs font-semibold bg-primary/10 text-primary border-primary/30">
+              {project.tipo_projeto || 'PRONAF'}
+            </Badge>
+          </div>
           {project.cliente_telefone && (
             <Button
               size="icon"
@@ -85,7 +93,7 @@ const KanbanCard = ({ project, onClick, onWhatsApp }) => {
               <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-red-600 dark:text-red-400">
-                  {pendencias.length} Pendência{pendencias.length > 1 ? 's' : ''}
+                  {pendencias.length} Pendência{pendencias.length > 1 ? 's' : ''} - Não pode mover
                 </p>
                 <p className="text-xs text-red-600/80 dark:text-red-400/80 truncate">
                   {pendencias[0].descricao}
@@ -125,15 +133,30 @@ const KanbanCard = ({ project, onClick, onWhatsApp }) => {
   );
 };
 
-const KanbanColumn = ({ etapa, projects, onCardClick, onWhatsApp, isActive }) => {
+const KanbanColumn = ({ 
+  etapa, 
+  projects, 
+  onCardClick, 
+  onWhatsApp, 
+  isActive,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+  isDragOver,
+  draggingProject
+}) => {
   const pendingCount = projects.filter(p => p.tem_pendencia).length;
 
   return (
     <div
       className={cn(
-        'flex-shrink-0 w-[280px] bg-muted/30 rounded-lg border',
-        isActive && 'ring-2 ring-primary/50'
+        'flex-shrink-0 w-[280px] bg-muted/30 rounded-lg border transition-all duration-200',
+        isActive && 'ring-2 ring-primary/50',
+        isDragOver && 'ring-2 ring-emerald-500 bg-emerald-500/10'
       )}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, etapa)}
       data-testid={`kanban-column-${etapa.id}`}
     >
       {/* Column Header */}
@@ -159,8 +182,11 @@ const KanbanColumn = ({ etapa, projects, onCardClick, onWhatsApp, isActive }) =>
       <ScrollArea className="h-[calc(100vh-420px)] min-h-[300px]">
         <div className="p-2 space-y-2">
           {projects.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Nenhum projeto
+            <div className={cn(
+              "text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg",
+              isDragOver && "border-emerald-500 bg-emerald-500/5"
+            )}>
+              {isDragOver ? 'Solte aqui' : 'Nenhum projeto'}
             </div>
           ) : (
             projects.map((project) => (
@@ -169,6 +195,9 @@ const KanbanColumn = ({ etapa, projects, onCardClick, onWhatsApp, isActive }) =>
                 project={project}
                 onClick={() => onCardClick(project)}
                 onWhatsApp={onWhatsApp}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                isDragging={draggingProject?.id === project.id}
               />
             ))
           )}
@@ -181,6 +210,8 @@ const KanbanColumn = ({ etapa, projects, onCardClick, onWhatsApp, isActive }) =>
 const KanbanBoard = ({ projects, etapas, onUpdate }) => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [draggingProject, setDraggingProject] = useState(null);
+  const [dragOverEtapa, setDragOverEtapa] = useState(null);
 
   const openWhatsApp = (telefone) => {
     if (!telefone) return;
@@ -194,9 +225,80 @@ const KanbanBoard = ({ projects, etapas, onUpdate }) => {
     setShowProjectDialog(true);
   };
 
+  // Refresh project data without closing dialog
+  const handleProjectUpdate = useCallback(async () => {
+    if (selectedProject) {
+      try {
+        // Fetch updated project data
+        const response = await projectsAPI.get(selectedProject.id);
+        setSelectedProject(response.data);
+      } catch (error) {
+        console.error('Error refreshing project:', error);
+      }
+    }
+    // Always call parent update to refresh the list
+    onUpdate();
+  }, [selectedProject, onUpdate]);
+
   const handleDialogClose = () => {
     setShowProjectDialog(false);
     setSelectedProject(null);
+    onUpdate(); // Refresh when dialog closes
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (e, project) => {
+    if (project.tem_pendencia) {
+      e.preventDefault();
+      return;
+    }
+    setDraggingProject(project);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggingProject(null);
+    setDragOverEtapa(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, targetEtapa) => {
+    e.preventDefault();
+    
+    if (!draggingProject) return;
+    
+    // Can't move to same etapa
+    if (draggingProject.etapa_atual_id === targetEtapa.id) {
+      setDraggingProject(null);
+      setDragOverEtapa(null);
+      return;
+    }
+
+    // Check if it's the next etapa (can only move forward one step)
+    const currentEtapaOrder = etapas.find(e => e.id === draggingProject.etapa_atual_id)?.ordem || 0;
+    const targetEtapaOrder = targetEtapa.ordem;
+
+    if (targetEtapaOrder !== currentEtapaOrder + 1) {
+      toast.error('Só é possível avançar para a próxima etapa');
+      setDraggingProject(null);
+      setDragOverEtapa(null);
+      return;
+    }
+
+    try {
+      await projectsAPI.advanceStage(draggingProject.id);
+      toast.success(`Projeto movido para ${targetEtapa.nome}`);
+      onUpdate();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erro ao mover projeto');
+    }
+
+    setDraggingProject(null);
+    setDragOverEtapa(null);
   };
 
   // Group projects by etapa
@@ -229,14 +331,22 @@ const KanbanBoard = ({ projects, etapas, onUpdate }) => {
           <span className="text-muted-foreground">Valor:</span>
           <span className="font-medium text-emerald-600">{formatCurrency(totalValue)}</span>
         </div>
+        {draggingProject && (
+          <div className="flex items-center gap-2 text-emerald-600">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-sm">Arraste para a próxima etapa</span>
+          </div>
+        )}
       </div>
 
       {/* Kanban Board */}
       <ScrollArea className="w-full">
         <div className="flex gap-4 pb-4">
-          {etapas.map((etapa, index) => {
+          {etapas.map((etapa) => {
             const etapaProjects = projectsByEtapa[etapa.id] || [];
             const hasActiveProjects = etapaProjects.length > 0;
+            const isDropTarget = draggingProject && 
+              etapa.ordem === (etapas.find(e => e.id === draggingProject.etapa_atual_id)?.ordem || 0) + 1;
             
             return (
               <KanbanColumn
@@ -246,6 +356,12 @@ const KanbanBoard = ({ projects, etapas, onUpdate }) => {
                 onCardClick={handleCardClick}
                 onWhatsApp={openWhatsApp}
                 isActive={hasActiveProjects}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                isDragOver={isDropTarget}
+                draggingProject={draggingProject}
               />
             );
           })}
@@ -254,7 +370,9 @@ const KanbanBoard = ({ projects, etapas, onUpdate }) => {
       </ScrollArea>
 
       {/* Project Detail Dialog */}
-      <Dialog open={showProjectDialog} onOpenChange={setShowProjectDialog}>
+      <Dialog open={showProjectDialog} onOpenChange={(open) => {
+        if (!open) handleDialogClose();
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -291,14 +409,11 @@ const KanbanBoard = ({ projects, etapas, onUpdate }) => {
                 </div>
               </div>
 
-              {/* Timeline */}
+              {/* Timeline - onUpdate now doesn't close dialog */}
               <ProjectTimeline
                 project={selectedProject}
                 etapas={etapas}
-                onUpdate={() => {
-                  onUpdate();
-                  handleDialogClose();
-                }}
+                onUpdate={handleProjectUpdate}
               />
             </div>
           )}
