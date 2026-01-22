@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Skeleton } from '../components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import {
   FolderOpen,
@@ -24,9 +25,12 @@ import {
   Search,
   XCircle,
   Banknote,
+  LayoutList,
+  Kanban,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ProjectTimeline from '../components/ProjectTimeline';
+import KanbanBoard from '../components/KanbanBoard';
 
 const StatCard = ({ title, value, icon: Icon, description, variant = 'default' }) => {
   const variants = {
