@@ -189,11 +189,7 @@ class ProjetoResponse(ProjetoBase):
     cliente_nome: str
     cliente_cpf: str
     cliente_telefone: Optional[str] = None
-    valor_credito: float
     tem_pendencia: bool = False
-    numero_contrato: Optional[str] = None
-    valor_servico: Optional[float] = None
-    tipo_projeto: Optional[str] = None
 
 class ConfigBase(BaseModel):
     logo_path: Optional[str] = None
