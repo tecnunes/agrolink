@@ -252,16 +252,33 @@ const NewProject = () => {
               <div className="space-y-2">
                 <Label htmlFor="tipo_projeto">Tipo de Projeto *</Label>
                 <Select
-                  value={tipoProjeto}
-                  onValueChange={setTipoProjeto}
+                  value={tipoProjetoId}
+                  onValueChange={setTipoProjetoId}
                 >
                   <SelectTrigger data-testid="select-tipo-projeto">
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PRONAF A">PRONAF A</SelectItem>
-                    <SelectItem value="PRONAF B">PRONAF B</SelectItem>
-                    <SelectItem value="CUSTEIO">CUSTEIO</SelectItem>
+                    {tiposProjeto.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="instituicao">Instituição Financeira *</Label>
+                <Select
+                  value={instituicaoId}
+                  onValueChange={setInstituicaoId}
+                >
+                  <SelectTrigger data-testid="select-instituicao">
+                    <SelectValue placeholder="Selecione a instituição" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {instituicoes.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>{i.nome}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
