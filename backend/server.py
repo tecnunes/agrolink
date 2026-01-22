@@ -91,10 +91,9 @@ class PartnerResponse(PartnerBase):
 class ClientBase(BaseModel):
     nome_completo: str
     cpf: str
-    endereco: str
+    endereco: Optional[str] = None
     telefone: str
-    data_nascimento: str
-    valor_credito: float
+    data_nascimento: Optional[str] = None
     parceiro_id: Optional[str] = None
 
 class ClientCreate(ClientBase):
@@ -105,8 +104,14 @@ class ClientResponse(ClientBase):
     id: str
     created_at: str
     parceiro_nome: Optional[str] = None
+    tem_projeto_ativo: Optional[bool] = False
+    ultimo_alerta: Optional[str] = None
+    qtd_alertas: Optional[int] = 0
 
 class DocumentoCheck(BaseModel):
+    # Documentos Pessoais Obrigatórios
+    rg_cnh: bool = False
+    conta_banco_brasil: bool = False
     # Etapa Coleta de Documentos
     ccu_titulo: bool = False
     saldo_iagro: bool = False
