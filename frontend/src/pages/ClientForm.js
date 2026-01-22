@@ -121,6 +121,10 @@ const ClientForm = () => {
       value = formatCPF(value);
     } else if (field === 'telefone') {
       value = formatPhone(value);
+    } else if (field === 'estado') {
+      loadCidades(value);
+      setFormData(prev => ({ ...prev, [field]: value, cidade: '' }));
+      return;
     }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
