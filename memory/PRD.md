@@ -159,4 +159,17 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - Campos Estado e Cidade no cadastro de cliente
 - Sino de notificação agora mostra propostas em aberto
 - **Visualização Kanban** no Dashboard com toggle para alternar com Tabela
+- **Modal de Nova Proposta aprimorado** - permite selecionar cliente existente ou criar novo
+- **Documentação para Deploy em Linux** - README.md completo com instruções
+- **Script de instalação automática** (install.sh)
+- **Health check endpoint** (/api/health)
 - Testes: 100% de sucesso (backend e frontend)
+
+## Deploy em Produção
+Veja o arquivo README.md na raiz do projeto para instruções detalhadas de instalação em servidor Linux com HTTPS.
+
+### Arquivos de Configuração
+- `/backend/.env.example` - Exemplo de configuração do backend
+- `/frontend/.env.example` - Exemplo de configuração do frontend
+- `/install.sh` - Script de instalação automática
+- `/.gitignore` - Arquivos ignorados pelo Git
