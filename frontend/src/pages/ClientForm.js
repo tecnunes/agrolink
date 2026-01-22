@@ -101,7 +101,13 @@ const ClientForm = () => {
         telefone: formatPhone(client.telefone || ''),
         data_nascimento: client.data_nascimento || '',
         parceiro_id: client.parceiro_id || '',
+        estado: client.estado || '',
+        cidade: client.cidade || '',
       });
+      // Load cities if state is set
+      if (client.estado) {
+        loadCidades(client.estado);
+      }
     } catch (error) {
       toast.error('Erro ao carregar cliente');
       navigate('/clientes');
