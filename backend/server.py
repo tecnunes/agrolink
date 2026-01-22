@@ -2285,6 +2285,66 @@ async def list_cidades(estado_sigla: str):
     
     return []
 
+# ==================== MASTER ONLY: RESET DATA ====================
+
+@api_router.delete("/master/reset-all-data")
+async def reset_all_data(current_user = Depends(get_auth_user)):
+    """
+    MASTER ONLY: Delete all projects, propostas, and clients.
+    This resets the system to a clean state.
+    """
+    if current_user["role"] != UserRole.MASTER:
+        raise HTTPException(status_code=403, detail="Apenas usuário Master pode executar esta ação")
+    
+    # Count before deletion
+    projects_count = await db.projects.count_documents({})
+    propostas_count = await db.propostas.count_documents({})
+    clients_count = await db.clients.count_documents({})
+    
+    # Delete all projects
+    await db.projects.delete_many({})
+    
+    # Delete all propostas
+    await db.propostas.delete_many({})
+    
+    # Delete all clients
+    await db.clients.delete_many({})
+    
+    # Clean up upload folder
+    import shutil
+    if UPLOAD_DIR.exists():
+        for folder in UPLOAD_DIR.iterdir():
+            if folder.is_dir():
+                shutil.rmtree(folder)
+    
+    return {
+        "message": "Todos os dados foram eliminados com sucesso",
+        "deleted": {
+            "projects": projects_count,
+            "propostas": propostas_count,
+            "clients": clients_count
+        }
+    }
+
+@api_router.get("/master/data-stats")
+async def get_data_stats(current_user = Depends(get_auth_user)):
+    """
+    MASTER ONLY: Get statistics of data in the system.
+    """
+    if current_user["role"] != UserRole.MASTER:
+        raise HTTPException(status_code=403, detail="Apenas usuário Master pode acessar")
+    
+    projects_count = await db.projects.count_documents({})
+    propostas_count = await db.propostas.count_documents({})
+    clients_count = await db.clients.count_documents({})
+    
+    return {
+        "projects": projects_count,
+        "propostas": propostas_count,
+        "clients": clients_count,
+        "total": projects_count + propostas_count + clients_count
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
