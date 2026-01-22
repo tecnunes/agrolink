@@ -834,7 +834,6 @@ async def list_projects(
             cliente_nome=client["nome_completo"],
             cliente_cpf=client["cpf"],
             cliente_telefone=client.get("telefone"),
-            valor_credito=proj.get("valor_credito", 0),
             tem_pendencia=tem_pendencia
         ))
     
