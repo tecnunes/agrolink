@@ -158,4 +158,5 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - Página de Configurações com 3 abas (Instituições, Tipos, Requisitos)
 - Campos Estado e Cidade no cadastro de cliente
 - Sino de notificação agora mostra propostas em aberto
+- **Visualização Kanban** no Dashboard com toggle para alternar com Tabela
 - Testes: 100% de sucesso (backend e frontend)
