@@ -512,27 +512,68 @@ const Propostas = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Main Content */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Lista de Propostas ({filteredPropostas.length})
-            </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              data-testid="toggle-filters"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filtros
-              {showFilters ? <ChevronDown className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
-            </Button>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Propostas ({propostas.length})
+              </CardTitle>
+              
+              {/* View Mode Toggle */}
+              <Tabs value={viewMode} onValueChange={setViewMode} className="hidden sm:block">
+                <TabsList className="h-8">
+                  <TabsTrigger value="kanban" className="h-7 px-3 gap-1" data-testid="view-kanban">
+                    <Kanban className="w-4 h-4" />
+                    <span className="hidden md:inline">Kanban</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="table" className="h-7 px-3 gap-1" data-testid="view-table">
+                    <LayoutList className="w-4 h-4" />
+                    <span className="hidden md:inline">Tabela</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Mobile View Toggle */}
+              <div className="sm:hidden flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Kanban className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setViewMode('table')}
+                >
+                  <LayoutList className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {viewMode === 'table' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  data-testid="toggle-filters"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filtros
+                  {showFilters ? <ChevronDown className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
+                </Button>
+              )}
+            </div>
           </div>
           
-          {showFilters && (
+          {viewMode === 'table' && showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t mt-4">
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -565,20 +606,162 @@ const Propostas = () => {
           )}
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="hidden sm:table-cell">CPF</TableHead>
-                  <TableHead className="hidden md:table-cell">Tipo</TableHead>
-                  <TableHead className="hidden md:table-cell">Instituição</TableHead>
-                  <TableHead className="hidden lg:table-cell">Valor</TableHead>
-                  <TableHead className="hidden lg:table-cell">Dias</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-32">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
+          {viewMode === 'kanban' ? (
+            /* Kanban View */
+            <ScrollArea className="w-full">
+              <div className="flex gap-4 pb-4">
+                <PropostaKanbanColumn
+                  title="Em Aberto"
+                  icon={Clock}
+                  variant="warning"
+                  propostas={propostas.filter(p => p.status === 'aberta')}
+                  onWhatsApp={openWhatsApp}
+                  onConverter={handleConverter}
+                  onDesistir={(p) => {
+                    setSelectedProposta(p);
+                    setShowDesistirDialog(true);
+                  }}
+                  onDelete={handleDelete}
+                />
+                <PropostaKanbanColumn
+                  title="Convertidas"
+                  icon={CheckCircle}
+                  variant="success"
+                  propostas={propostas.filter(p => p.status === 'convertida')}
+                  onWhatsApp={openWhatsApp}
+                  onConverter={handleConverter}
+                  onDesistir={(p) => {
+                    setSelectedProposta(p);
+                    setShowDesistirDialog(true);
+                  }}
+                  onDelete={handleDelete}
+                />
+                <PropostaKanbanColumn
+                  title="Desistidas"
+                  icon={XCircle}
+                  variant="destructive"
+                  propostas={propostas.filter(p => p.status === 'desistida')}
+                  onWhatsApp={openWhatsApp}
+                  onConverter={handleConverter}
+                  onDesistir={(p) => {
+                    setSelectedProposta(p);
+                    setShowDesistirDialog(true);
+                  }}
+                  onDelete={handleDelete}
+                />
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          ) : (
+            /* Table View */
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="hidden sm:table-cell">CPF</TableHead>
+                    <TableHead className="hidden md:table-cell">Tipo</TableHead>
+                    <TableHead className="hidden md:table-cell">Instituição</TableHead>
+                    <TableHead className="hidden lg:table-cell">Valor</TableHead>
+                    <TableHead className="hidden lg:table-cell">Dias</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-32">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPropostas.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        Nenhuma proposta encontrada
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredPropostas.map((proposta) => (
+                      <TableRow
+                        key={proposta.id}
+                        className={cn(
+                          proposta.status === 'aberta' && proposta.dias_aberta > 3 && 'bg-amber-50 dark:bg-amber-950/20'
+                        )}
+                        data-testid={`proposta-row-${proposta.id}`}
+                      >
+                        <TableCell className="font-medium">{proposta.cliente_nome}</TableCell>
+                        <TableCell className="hidden sm:table-cell mono text-sm">
+                          {formatCPF(proposta.cliente_cpf)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge variant="outline">{proposta.tipo_projeto_nome}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-sm">
+                          {proposta.instituicao_financeira_nome}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {formatCurrency(proposta.valor_credito)}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Clock className="w-3 h-3" />
+                            {proposta.dias_aberta}d
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(proposta.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {proposta.cliente_telefone && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => openWhatsApp(proposta.cliente_telefone)}
+                                className="h-8 w-8"
+                                title="WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4 text-green-600" />
+                              </Button>
+                            )}
+                            {proposta.status === 'aberta' && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleConverter(proposta)}
+                                  className="h-8 w-8"
+                                  title="Converter em Projeto"
+                                >
+                                  <ArrowRight className="w-4 h-4 text-primary" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setSelectedProposta(proposta);
+                                    setShowDesistirDialog(true);
+                                  }}
+                                  className="h-8 w-8"
+                                  title="Desistir"
+                                >
+                                  <XCircle className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(proposta)}
+                              className="h-8 w-8"
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
               <TableBody>
                 {filteredPropostas.length === 0 ? (
                   <TableRow>
