@@ -12,31 +12,33 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - Sistema com Login e senha (Criados apenas pelo Admin e Master)
 - Cadastro de Cliente (Nome, CPF, Endereço, Telefone, Data Nascimento, Valor Crédito, Indicação)
 - Upload de Documentos (CCU/Título, Saldo IAGRO, CAR) com validação
-- Fluxo de 7 etapas configuráveis
+- Fluxo de 8 etapas configuráveis
 - Dashboard interativo com filtros
 - Gestão de pendências e observações
 - Relatórios com exportação PDF
 - Tema claro/escuro alternável
 
-## O que foi Implementado (22/01/2025)
+## O que foi Implementado
 
 ### Backend (FastAPI + MongoDB)
 - ✅ Autenticação JWT com 3 níveis de permissão
 - ✅ CRUD completo de Clientes
 - ✅ CRUD de Parceiros com comissão
 - ✅ CRUD de Usuários com permissões
-- ✅ Gestão de Etapas configuráveis
+- ✅ Gestão de Etapas configuráveis (8 etapas)
 - ✅ Sistema de Projetos com timeline
 - ✅ Upload de documentos (até 10MB)
-- ✅ Checklist de documentos obrigatórios
+- ✅ Checklist de documentos obrigatórios por etapa
 - ✅ Pendências e Observações por etapa
 - ✅ Relatórios com filtros
 - ✅ Dashboard com estatísticas
+- ✅ **Sistema de alertas para clientes sem projeto ativo**
+- ✅ **Lógica de bloqueio de avanço de etapa com requisitos pendentes**
 
 ### Frontend (React + Tailwind + Shadcn)
 - ✅ Login com tema agrícola
 - ✅ Layout responsivo (Desktop/Tablet/Mobile)
-- ✅ Dashboard com cards de estatísticas
+- ✅ Dashboard com 5 cards de estatísticas
 - ✅ Tabela de projetos com expansão para timeline
 - ✅ Formulário de cadastro de cliente
 - ✅ Listagem de clientes com busca
@@ -47,10 +49,22 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - ✅ Relatórios com filtros e exportação PDF
 - ✅ Tema claro/escuro alternável
 - ✅ Logo customizável
+- ✅ **Sino de notificação (NotificationBell) no header**
+- ✅ **Tabela de Projetos Finalizados com layout correto**
 
 ## Credenciais Padrão
 - Login: admin
 - Senha: #Sti93qn06301616
+
+## Etapas do Fluxo de Projeto
+1. Cadastro
+2. Coleta de Documentos (RG/CNH, Conta BB, CCU/Título, Saldo IAGRO, CAR)
+3. Desenvolvimento do Projeto
+4. Coletar Assinaturas
+5. Protocolo CENOP
+6. Instrumento de Crédito (Assinatura Agência, Upload Contrato)
+7. GTA e Nota Fiscal
+8. Projeto Creditado
 
 ## Prioritized Backlog
 
@@ -60,6 +74,9 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - [x] Cadastro de clientes
 - [x] Fluxo de projetos
 - [x] Upload de documentos
+- [x] Sino de notificação para clientes sem projeto
+- [x] Bloqueio de avanço de etapa com pendências
+- [x] Tabela de Projetos Finalizados funcionando
 
 ### P1 - Importante (Concluído)
 - [x] Gestão de pendências
@@ -73,16 +90,24 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - [ ] Backup automático de documentos
 - [ ] Dashboard com gráficos de evolução
 - [ ] Integração com APIs externas (IAGRO, CAR)
+- [ ] Campos personalizados para clientes
+- [ ] Funcionalidade "Desistir do Projeto" completa
 
 ## Próximas Tarefas
-1. Testar fluxo completo de um projeto do início ao fim
-2. Configurar backup automático do MongoDB
-3. Implementar notificações visuais de pendências vencidas
-4. Adicionar mais filtros nos relatórios
-5. Melhorar exportação PDF com mais detalhes
+1. Geração de Relatórios em PDF com mais detalhes
+2. Campos personalizados para clientes (Admin/Master)
+3. Funcionalidade "Desistir do Projeto" com motivo e exclusão de dados
+4. Implementar notificações visuais de pendências vencidas
 
 ## Stack Técnica
 - **Backend**: FastAPI, Python 3.11, Motor (MongoDB async)
 - **Frontend**: React 19, Tailwind CSS, Shadcn/UI
 - **Database**: MongoDB
 - **Auth**: JWT + BCrypt
+
+## Última Atualização: 22/01/2026
+- Implementado sino de notificação (NotificationBell) no header
+- Corrigido endpoint de documentos para incluir rg_cnh e conta_banco_brasil
+- Corrigido ProjetoResponse com campos duplicados
+- Testado e validado: lógica de bloqueio de avanço, alertas, tabela de projetos arquivados
+- Todos os testes passaram com 100% de sucesso
