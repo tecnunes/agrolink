@@ -696,7 +696,21 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
         "etapa_atual_nome": first_etapa["nome"],
         "status": "em_andamento",
         "motivo_desistencia": None,
-        "documentos_check": {"ccu_titulo": False, "saldo_iagro": False, "car": False},
+        "documentos_check": {
+            "rg_cnh": False,
+            "conta_banco_brasil": False,
+            "ccu_titulo": False,
+            "saldo_iagro": False,
+            "car": False,
+            "projeto_implementado": False,
+            "projeto_assinado": False,
+            "projeto_protocolado": False,
+            "assinatura_agencia": False,
+            "upload_contrato": False,
+            "gta_emitido": False,
+            "nota_fiscal_emitida": False,
+            "comprovante_servico_pago": False
+        },
         "historico_etapas": [{
             "etapa_id": first_etapa["id"],
             "etapa_nome": first_etapa["nome"],
@@ -707,7 +721,11 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
             "observacoes": []
         }],
         "data_inicio": now,
-        "data_arquivamento": None
+        "data_arquivamento": None,
+        "valor_credito": project_data.valor_credito,
+        "tipo_projeto": project_data.tipo_projeto,
+        "numero_contrato": None,
+        "valor_servico": None
     }
     
     await db.projects.insert_one(new_project)
@@ -716,7 +734,7 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
         **new_project,
         cliente_nome=client["nome_completo"],
         cliente_cpf=client["cpf"],
-        valor_credito=client["valor_credito"],
+        cliente_telefone=client.get("telefone"),
         tem_pendencia=False
     )
 
