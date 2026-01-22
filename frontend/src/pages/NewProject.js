@@ -33,13 +33,37 @@ const NewProject = () => {
   const [confirmDialog, setConfirmDialog] = useState(false);
   const [creating, setCreating] = useState(false);
   
+  // Config data
+  const [tiposProjeto, setTiposProjeto] = useState([]);
+  const [instituicoes, setInstituicoes] = useState([]);
+  
   // Project data
   const [valorCredito, setValorCredito] = useState('');
-  const [tipoProjeto, setTipoProjeto] = useState('PRONAF A');
+  const [tipoProjetoId, setTipoProjetoId] = useState('');
+  const [instituicaoId, setInstituicaoId] = useState('');
 
   useEffect(() => {
-    loadClients();
+    loadInitialData();
   }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      const [clientsRes, tiposRes, instRes] = await Promise.all([
+        clientsAPI.list(''),
+        tiposProjetoAPI.list(),
+        instituicoesAPI.list(),
+      ]);
+      // Filter clients without active project
+      setClients(clientsRes.data.filter(c => !c.tem_projeto_ativo));
+      setTiposProjeto(tiposRes.data);
+      setInstituicoes(instRes.data);
+    } catch (error) {
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadClients = async (searchTerm = '') => {
     try {
