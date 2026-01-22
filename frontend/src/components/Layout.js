@@ -39,6 +39,7 @@ import {
   Bell,
   MessageCircle,
   AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -57,6 +58,10 @@ const adminMenuItems = [
   { icon: Users, label: 'Usuários', path: '/admin/usuarios', roles: ['master', 'admin'] },
   { icon: CheckSquare, label: 'Etapas', path: '/admin/etapas', roles: ['master', 'admin'] },
   { icon: Settings, label: 'Configurações', path: '/admin/configuracoes', roles: ['master', 'admin'] },
+];
+
+const masterMenuItems = [
+  { icon: Trash2, label: 'Eliminar Dados', path: '/admin/eliminar-dados', roles: ['master'] },
 ];
 
 const SidebarContent = ({ onItemClick }) => {
