@@ -1020,19 +1020,35 @@ async def update_documents_check(project_id: str, data: dict, current_user = Dep
     
     docs_check = project.get("documentos_check", {})
     
-    if "ccu_titulo" in data:
-        docs_check["ccu_titulo"] = data["ccu_titulo"]
-    if "saldo_iagro" in data:
-        docs_check["saldo_iagro"] = data["saldo_iagro"]
-    if "car" in data:
-        docs_check["car"] = data["car"]
+    # Campos de checklist por etapa
+    check_fields = [
+        "ccu_titulo", "saldo_iagro", "car",  # Coleta de Documentos
+        "projeto_implementado",  # Desenvolvimento do Projeto
+        "projeto_assinado",  # Coletar Assinaturas
+        "projeto_protocolado",  # Protocolo CENOP
+        "assinatura_agencia", "upload_contrato",  # Instrumento de Crédito
+        "gta_emitido", "nota_fiscal_emitida",  # GTA e Nota Fiscal
+        "comprovante_servico_pago"  # Projeto Creditado
+    ]
+    
+    for field in check_fields:
+        if field in data:
+            docs_check[field] = data[field]
+    
+    update_data = {"documentos_check": docs_check}
+    
+    # Campos extras do projeto
+    if "numero_contrato" in data:
+        update_data["numero_contrato"] = data["numero_contrato"]
+    if "valor_servico" in data:
+        update_data["valor_servico"] = float(data["valor_servico"]) if data["valor_servico"] else None
     
     await db.projects.update_one(
         {"id": project_id},
-        {"$set": {"documentos_check": docs_check}}
+        {"$set": update_data}
     )
     
-    return {"message": "Documentos atualizados"}
+    return {"message": "Dados atualizados"}
 
 # ==================== FILE UPLOAD ROUTES ====================
 
