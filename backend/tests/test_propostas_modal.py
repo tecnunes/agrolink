@@ -153,7 +153,9 @@ class TestFlow2NewClient:
     
     def test_create_proposta_with_new_client(self, auth_headers, tipo_projeto_id, instituicao_id):
         """Test POST /api/propostas with new client data (nome, cpf, telefone)"""
-        unique_cpf = f"TEST{str(uuid.uuid4())[:7].replace('-', '')}"[:11].ljust(11, '0')
+        # Generate a valid 11-digit CPF
+        import random
+        unique_cpf = ''.join([str(random.randint(0, 9)) for _ in range(11)])
         
         payload = {
             "nome_completo": "TEST_NEW_CLIENT_API",
