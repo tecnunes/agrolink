@@ -815,6 +815,20 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
     if not first_etapa:
         raise HTTPException(status_code=400, detail="Nenhuma etapa configurada")
     
+    # Get instituicao financeira name if provided
+    instituicao_nome = None
+    if project_data.instituicao_financeira_id:
+        instituicao = await db.instituicoes_financeiras.find_one({"id": project_data.instituicao_financeira_id}, {"_id": 0})
+        if instituicao:
+            instituicao_nome = instituicao["nome"]
+    
+    # Get tipo projeto name if ID provided
+    tipo_projeto_nome = project_data.tipo_projeto
+    if project_data.tipo_projeto_id:
+        tipo = await db.tipos_projeto.find_one({"id": project_data.tipo_projeto_id}, {"_id": 0})
+        if tipo:
+            tipo_projeto_nome = tipo["nome"]
+    
     now = datetime.now(timezone.utc).isoformat()
     
     new_project = {
@@ -851,7 +865,11 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
         "data_inicio": now,
         "data_arquivamento": None,
         "valor_credito": project_data.valor_credito,
-        "tipo_projeto": project_data.tipo_projeto,
+        "tipo_projeto": tipo_projeto_nome,
+        "tipo_projeto_id": project_data.tipo_projeto_id,
+        "instituicao_financeira_id": project_data.instituicao_financeira_id,
+        "instituicao_financeira_nome": instituicao_nome,
+        "proposta_id": project_data.proposta_id,
         "numero_contrato": None,
         "valor_servico": None
     }
