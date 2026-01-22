@@ -124,13 +124,6 @@ const KanbanCard = ({ project, onClick, onWhatsApp }) => {
     </Card>
   );
 };
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
 
 const KanbanColumn = ({ etapa, projects, onCardClick, onWhatsApp, isActive }) => {
   const pendingCount = projects.filter(p => p.tem_pendencia).length;
