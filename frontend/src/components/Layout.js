@@ -161,6 +161,116 @@ const SidebarContent = ({ onItemClick }) => {
   );
 };
 
+const NotificationBell = () => {
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const fetchAlerts = useCallback(async () => {
+    try {
+      const response = await alertsAPI.getAll();
+      setAlerts(response.data.alerts || []);
+    } catch (error) {
+      console.error('Erro ao buscar alertas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+    // Refresh alerts every 5 minutes
+    const interval = setInterval(fetchAlerts, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchAlerts]);
+
+  const openWhatsApp = (telefone) => {
+    if (!telefone) return;
+    const phone = telefone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+    window.open(`https://wa.me/${formattedPhone}`, '_blank');
+  };
+
+  const handleClientClick = (clientId) => {
+    navigate(`/clientes?highlight=${clientId}`);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative rounded-full"
+          data-testid="notification-bell"
+        >
+          <Bell className="h-5 w-5" />
+          {alerts.length > 0 && (
+            <Badge
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-destructive"
+              data-testid="notification-count"
+            >
+              {alerts.length > 9 ? '9+' : alerts.length}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-auto">
+        <DropdownMenuLabel className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          Clientes sem Projeto ({alerts.length})
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {loading ? (
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            Carregando...
+          </div>
+        ) : alerts.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground text-sm">
+            Nenhum alerta no momento
+          </div>
+        ) : (
+          alerts.slice(0, 10).map((alert) => (
+            <DropdownMenuItem
+              key={alert.id}
+              className="flex items-start gap-3 p-3 cursor-pointer"
+              onClick={() => handleClientClick(alert.id)}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{alert.cliente_nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {alert.dias_sem_projeto} dias sem projeto
+                </p>
+              </div>
+              {alert.telefone && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openWhatsApp(alert.telefone);
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4 text-green-600" />
+                </Button>
+              )}
+            </DropdownMenuItem>
+          ))
+        )}
+        {alerts.length > 10 && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="p-2 text-center text-xs text-muted-foreground">
+              E mais {alerts.length - 10} clientes...
+            </div>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const Layout = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
