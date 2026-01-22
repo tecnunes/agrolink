@@ -253,11 +253,18 @@ class ProjetoBase(BaseModel):
     valor_servico: Optional[float] = None
     valor_credito: float = 0.0
     tipo_projeto: str = "PRONAF A"  # PRONAF A, PRONAF B, CUSTEIO
+    tipo_projeto_id: Optional[str] = None
+    instituicao_financeira_id: Optional[str] = None
+    instituicao_financeira_nome: Optional[str] = None
+    proposta_id: Optional[str] = None  # Link para proposta original
 
 class ProjetoCreate(BaseModel):
     cliente_id: str
     valor_credito: float
     tipo_projeto: str = "PRONAF A"
+    tipo_projeto_id: Optional[str] = None
+    instituicao_financeira_id: Optional[str] = None
+    proposta_id: Optional[str] = None  # Se convertido de uma proposta
 
 class ProjetoResponse(ProjetoBase):
     model_config = ConfigDict(extra="ignore")
