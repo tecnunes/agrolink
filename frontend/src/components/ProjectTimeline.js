@@ -714,6 +714,22 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
           <Eye className="w-4 h-4 mr-2" />
           Ver Cliente
         </Button>
+        {project.cliente_telefone && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const phone = project.cliente_telefone.replace(/\D/g, '');
+              const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+              window.open(`https://wa.me/${formattedPhone}`, '_blank');
+            }}
+            data-testid="whatsapp-btn"
+            className="text-green-600 hover:text-green-700"
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            WhatsApp
+          </Button>
+        )}
         
         <div className="flex-1" />
         
