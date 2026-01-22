@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { alertsAPI } from '../lib/api';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { Badge } from './ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +36,9 @@ import {
   Menu,
   LogOut,
   ChevronRight,
+  Bell,
+  MessageCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
