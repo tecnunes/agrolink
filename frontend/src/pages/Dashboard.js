@@ -24,6 +24,7 @@ import {
   Filter,
   Search,
   XCircle,
+  Banknote,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ProjectTimeline from '../components/ProjectTimeline';
