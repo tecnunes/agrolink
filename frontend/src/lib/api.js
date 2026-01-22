@@ -71,6 +71,7 @@ export const projectsAPI = {
   get: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects', data),
   nextStage: (id) => api.put(`/projects/${id}/next-stage`),
+  advanceStage: (id) => api.put(`/projects/${id}/next-stage`),
   archive: (id) => api.put(`/projects/${id}/archive`),
   cancel: (id, data) => api.put(`/projects/${id}/cancel`, data),
   addPendencia: (id, data) => api.post(`/projects/${id}/pendencia`, data),
