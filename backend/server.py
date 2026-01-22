@@ -148,9 +148,13 @@ class PropostaBase(BaseModel):
     motivo_desistencia: Optional[str] = None
 
 class PropostaCreate(BaseModel):
-    nome_completo: str
-    cpf: str
-    telefone: str
+    # Se client_id for fornecido, usa o cliente existente
+    client_id: Optional[str] = None
+    # Se client_id não for fornecido, cria um novo cliente com estes dados
+    nome_completo: Optional[str] = None
+    cpf: Optional[str] = None
+    telefone: Optional[str] = None
+    # Campos obrigatórios da proposta
     tipo_projeto_id: str
     instituicao_financeira_id: str
     valor_credito: float
