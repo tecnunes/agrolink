@@ -11,7 +11,6 @@ import ClientForm from './pages/ClientForm';
 import ClientList from './pages/ClientList';
 import Propostas from './pages/Propostas';
 import NewProject from './pages/NewProject';
-import ProjectDetails from './pages/ProjectDetails';
 import ArchivedProjects from './pages/ArchivedProjects';
 import Reports from './pages/Reports';
 import Partners from './pages/admin/Partners';
