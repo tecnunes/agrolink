@@ -7,7 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, User, MessageCircle } from 'lucide-react';
 
 const formatCPF = (value) => {
   const numbers = value.replace(/\D/g, '');
@@ -39,7 +39,6 @@ const ClientForm = () => {
     endereco: '',
     telefone: '',
     data_nascimento: '',
-    valor_credito: '',
     parceiro_id: '',
   });
 
@@ -67,10 +66,9 @@ const ClientForm = () => {
       setFormData({
         nome_completo: client.nome_completo,
         cpf: formatCPF(client.cpf),
-        endereco: client.endereco,
-        telefone: formatPhone(client.telefone),
-        data_nascimento: client.data_nascimento,
-        valor_credito: client.valor_credito.toString(),
+        endereco: client.endereco || '',
+        telefone: formatPhone(client.telefone || ''),
+        data_nascimento: client.data_nascimento || '',
         parceiro_id: client.parceiro_id || '',
       });
     } catch (error) {
@@ -90,12 +88,21 @@ const ClientForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const openWhatsApp = () => {
+    const phone = formData.telefone.replace(/\D/g, '');
+    if (phone.length >= 10) {
+      const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+      window.open(`https://wa.me/${formattedPhone}`, '_blank');
+    } else {
+      toast.error('Telefone inválido para WhatsApp');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.nome_completo || !formData.cpf || !formData.endereco || 
-        !formData.telefone || !formData.data_nascimento || !formData.valor_credito) {
-      toast.error('Preencha todos os campos obrigatórios');
+    if (!formData.nome_completo || !formData.cpf || !formData.telefone) {
+      toast.error('Preencha os campos obrigatórios: Nome, CPF e Telefone');
       return;
     }
 
@@ -108,11 +115,12 @@ const ClientForm = () => {
     try {
       setLoading(true);
       const data = {
-        ...formData,
+        nome_completo: formData.nome_completo,
         cpf: cpfClean,
+        endereco: formData.endereco || null,
         telefone: formData.telefone.replace(/\D/g, ''),
-        valor_credito: parseFloat(formData.valor_credito),
-        parceiro_id: formData.parceiro_id === "none" ? null : formData.parceiro_id || null,
+        data_nascimento: formData.data_nascimento || null,
+        parceiro_id: formData.parceiro_id || null,
       };
 
       if (isEditing) {
@@ -136,12 +144,18 @@ const ClientForm = () => {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} data-testid="back-btn">
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">{isEditing ? 'Editar Cliente' : 'Novo Cliente'}</h1>
           <p className="text-muted-foreground">
             {isEditing ? 'Atualize os dados do cliente' : 'Cadastre um novo cliente no sistema'}
           </p>
         </div>
+        {isEditing && formData.telefone && (
+          <Button variant="outline" onClick={openWhatsApp} className="gap-2" data-testid="whatsapp-btn">
+            <MessageCircle className="w-4 h-4" />
+            WhatsApp
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -193,7 +207,7 @@ const ClientForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="nascimento">Data de Nascimento *</Label>
+                <Label htmlFor="nascimento">Data de Nascimento</Label>
                 <Input
                   id="nascimento"
                   type="date"
@@ -204,31 +218,6 @@ const ClientForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="credito">Valor do Crédito (R$) *</Label>
-                <Input
-                  id="credito"
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  value={formData.valor_credito}
-                  onChange={(e) => handleChange('valor_credito', e.target.value)}
-                  data-testid="input-credito"
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="endereco">Endereço *</Label>
-                <Input
-                  id="endereco"
-                  placeholder="Rua, número, bairro, cidade - UF"
-                  value={formData.endereco}
-                  onChange={(e) => handleChange('endereco', e.target.value)}
-                  data-testid="input-endereco"
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
                 <Label htmlFor="parceiro">Indicação (Parceiro)</Label>
                 <Select
                   value={formData.parceiro_id}
@@ -246,6 +235,17 @@ const ClientForm = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  placeholder="Rua, número, bairro, cidade - UF (opcional)"
+                  value={formData.endereco}
+                  onChange={(e) => handleChange('endereco', e.target.value)}
+                  data-testid="input-endereco"
+                />
               </div>
             </div>
 
