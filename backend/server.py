@@ -889,7 +889,6 @@ async def get_project(project_id: str, current_user = Depends(get_auth_user)):
         cliente_nome=client["nome_completo"],
         cliente_cpf=client["cpf"],
         cliente_telefone=client.get("telefone"),
-        valor_credito=project.get("valor_credito", 0),
         tem_pendencia=tem_pendencia
     )
 
