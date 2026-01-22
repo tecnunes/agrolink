@@ -96,6 +96,51 @@ export const filesAPI = {
 export const alertsAPI = {
   getAll: () => api.get('/alerts/all'),
   check: () => api.get('/alerts'),
+  getPropostas: () => api.get('/alerts/propostas'),
+  clearPropostaAlert: (id) => api.put(`/alerts/propostas/${id}/clear`),
+  clearAllPropostaAlerts: () => api.put('/alerts/propostas/clear-all'),
+};
+
+// Propostas
+export const propostasAPI = {
+  list: (params) => api.get('/propostas', { params }),
+  get: (id) => api.get(`/propostas/${id}`),
+  create: (data) => api.post('/propostas', data),
+  converter: (id) => api.put(`/propostas/${id}/converter`),
+  desistir: (id, data) => api.put(`/propostas/${id}/desistir`, data),
+  delete: (id) => api.delete(`/propostas/${id}`),
+};
+
+// Instituições Financeiras
+export const instituicoesAPI = {
+  list: () => api.get('/instituicoes-financeiras'),
+  listAll: () => api.get('/instituicoes-financeiras/all'),
+  create: (data) => api.post('/instituicoes-financeiras', data),
+  update: (id, data) => api.put(`/instituicoes-financeiras/${id}`, data),
+  delete: (id) => api.delete(`/instituicoes-financeiras/${id}`),
+};
+
+// Tipos de Projeto
+export const tiposProjetoAPI = {
+  list: () => api.get('/tipos-projeto'),
+  listAll: () => api.get('/tipos-projeto/all'),
+  create: (data) => api.post('/tipos-projeto', data),
+  update: (id, data) => api.put(`/tipos-projeto/${id}`, data),
+  delete: (id) => api.delete(`/tipos-projeto/${id}`),
+};
+
+// Requisitos de Etapa
+export const requisitosEtapaAPI = {
+  list: (etapaId) => api.get('/requisitos-etapa', { params: { etapa_id: etapaId } }),
+  create: (data) => api.post('/requisitos-etapa', data),
+  update: (id, data) => api.put(`/requisitos-etapa/${id}`, data),
+  delete: (id) => api.delete(`/requisitos-etapa/${id}`),
+};
+
+// Estados e Cidades
+export const localizacaoAPI = {
+  getEstados: () => api.get('/estados'),
+  getCidades: (estadoSigla) => api.get(`/cidades/${estadoSigla}`),
 };
 
 // Config
