@@ -553,7 +553,20 @@ async def list_clients(
         ]
     
     clients = await db.clients.find(query, {"_id": 0}).to_list(1000)
-    return [ClientResponse(**c) for c in clients]
+    
+    result = []
+    for c in clients:
+        # Check if client has active project
+        active_project = await db.projects.find_one({
+            "cliente_id": c["id"],
+            "status": "em_andamento"
+        })
+        c["tem_projeto_ativo"] = active_project is not None
+        c["ultimo_alerta"] = c.get("ultimo_alerta")
+        c["qtd_alertas"] = c.get("qtd_alertas", 0)
+        result.append(ClientResponse(**c))
+    
+    return result
 
 @api_router.get("/clients/{client_id}", response_model=ClientResponse)
 async def get_client(client_id: str, current_user = Depends(get_auth_user)):
@@ -562,6 +575,13 @@ async def get_client(client_id: str, current_user = Depends(get_auth_user)):
     client = await db.clients.find_one({"id": client_id}, {"_id": 0})
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Check if client has active project
+    active_project = await db.projects.find_one({
+        "cliente_id": client_id,
+        "status": "em_andamento"
+    })
+    client["tem_projeto_ativo"] = active_project is not None
     
     return ClientResponse(**client)
 
