@@ -216,17 +216,56 @@ const Dashboard = () => {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-lg">Projetos em Andamento</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              data-testid="toggle-filters"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filtros
-              {showFilters ? <ChevronDown className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
-            </Button>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-lg">Projetos em Andamento</CardTitle>
+              
+              {/* View Mode Toggle */}
+              <Tabs value={viewMode} onValueChange={setViewMode} className="hidden sm:block">
+                <TabsList className="h-8">
+                  <TabsTrigger value="table" className="h-7 px-3 gap-1" data-testid="view-table">
+                    <LayoutList className="w-4 h-4" />
+                    <span className="hidden md:inline">Tabela</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="kanban" className="h-7 px-3 gap-1" data-testid="view-kanban">
+                    <Kanban className="w-4 h-4" />
+                    <span className="hidden md:inline">Kanban</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Mobile View Toggle */}
+              <div className="sm:hidden flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setViewMode('table')}
+                >
+                  <LayoutList className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setViewMode('kanban')}
+                >
+                  <Kanban className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                data-testid="toggle-filters"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filtros
+                {showFilters ? <ChevronDown className="w-4 h-4 ml-2" /> : <ChevronRight className="w-4 h-4 ml-2" />}
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
