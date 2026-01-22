@@ -314,64 +314,59 @@ const Dashboard = () => {
                   </TableRow>
                 ) : (
                   projects.map((project) => (
-                    <Collapsible
-                      key={project.id}
-                      open={expandedProject === project.id}
-                      onOpenChange={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <TableRow
-                          className={cn(
-                            'cursor-pointer transition-colors',
-                            project.tem_pendencia && 'pendencia-row',
-                            expandedProject === project.id && 'bg-muted/50'
+                    <React.Fragment key={project.id}>
+                      <TableRow
+                        className={cn(
+                          'cursor-pointer transition-colors hover:bg-muted/50',
+                          project.tem_pendencia && 'pendencia-row',
+                          expandedProject === project.id && 'bg-muted/50'
+                        )}
+                        onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
+                        data-testid={`project-row-${project.id}`}
+                      >
+                        <TableCell>
+                          {expandedProject === project.id ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
                           )}
-                          data-testid={`project-row-${project.id}`}
-                        >
-                          <TableCell>
-                            {expandedProject === project.id ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">{project.cliente_nome}</TableCell>
-                          <TableCell className="hidden sm:table-cell mono text-sm">
-                            {formatCPF(project.cliente_cpf)}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {formatCurrency(project.valor_credito)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="font-normal">
-                              {project.etapa_atual_nome}
+                        </TableCell>
+                        <TableCell className="font-medium">{project.cliente_nome}</TableCell>
+                        <TableCell className="hidden sm:table-cell mono text-sm">
+                          {formatCPF(project.cliente_cpf)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {formatCurrency(project.valor_credito)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-normal whitespace-nowrap">
+                            {project.etapa_atual_nome}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">
+                          {new Date(project.data_inicio).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+                            <Clock className="w-3 h-3" />
+                            {calculateDuration(project.data_inicio)} dias
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {project.tem_pendencia ? (
+                            <Badge variant="destructive" className="gap-1">
+                              <XCircle className="w-3 h-3" />
+                              Pendente
                             </Badge>
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">
-                            {new Date(project.data_inicio).toLocaleDateString('pt-BR')}
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell">
-                            <div className="flex items-center gap-1 text-sm">
-                              <Clock className="w-3 h-3" />
-                              {calculateDuration(project.data_inicio)} dias
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {project.tem_pendencia ? (
-                              <Badge variant="destructive" className="gap-1">
-                                <XCircle className="w-3 h-3" />
-                                Pendente
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                                <CheckCircle className="w-3 h-3" />
-                                OK
-                              </Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
+                          ) : (
+                            <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                              <CheckCircle className="w-3 h-3" />
+                              OK
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {expandedProject === project.id && (
                         <TableRow>
                           <TableCell colSpan={8} className="p-0 bg-muted/30">
                             <ProjectTimeline
@@ -381,8 +376,8 @@ const Dashboard = () => {
                             />
                           </TableCell>
                         </TableRow>
-                      </CollapsibleContent>
-                    </Collapsible>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </TableBody>
