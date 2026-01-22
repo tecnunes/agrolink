@@ -168,6 +168,8 @@ class ProjetoBase(BaseModel):
     historico_etapas: List[ProjetoEtapa] = []
     data_inicio: str
     data_arquivamento: Optional[str] = None
+    numero_contrato: Optional[str] = None
+    valor_servico: Optional[float] = None
 
 class ProjetoCreate(BaseModel):
     cliente_id: str
