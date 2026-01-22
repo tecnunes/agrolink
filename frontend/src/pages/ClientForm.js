@@ -33,6 +33,9 @@ const ClientForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [partners, setPartners] = useState([]);
+  const [estados, setEstados] = useState([]);
+  const [cidades, setCidades] = useState([]);
+  const [loadingCidades, setLoadingCidades] = useState(false);
   const [formData, setFormData] = useState({
     nome_completo: '',
     cpf: '',
@@ -40,14 +43,42 @@ const ClientForm = () => {
     telefone: '',
     data_nascimento: '',
     parceiro_id: '',
+    estado: '',
+    cidade: '',
   });
 
   useEffect(() => {
     loadPartners();
+    loadEstados();
     if (isEditing) {
       loadClient();
     }
   }, [id]);
+
+  const loadEstados = async () => {
+    try {
+      const response = await localizacaoAPI.getEstados();
+      setEstados(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar estados');
+    }
+  };
+
+  const loadCidades = async (estadoSigla) => {
+    if (!estadoSigla) {
+      setCidades([]);
+      return;
+    }
+    try {
+      setLoadingCidades(true);
+      const response = await localizacaoAPI.getCidades(estadoSigla);
+      setCidades(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar cidades');
+    } finally {
+      setLoadingCidades(false);
+    }
+  };
 
   const loadPartners = async () => {
     try {
