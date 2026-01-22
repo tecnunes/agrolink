@@ -95,6 +95,8 @@ class ClientBase(BaseModel):
     telefone: str
     data_nascimento: Optional[str] = None
     parceiro_id: Optional[str] = None
+    estado: Optional[str] = None
+    cidade: Optional[str] = None
 
 class ClientCreate(ClientBase):
     pass
@@ -105,8 +107,82 @@ class ClientResponse(ClientBase):
     created_at: str
     parceiro_nome: Optional[str] = None
     tem_projeto_ativo: Optional[bool] = False
+    tem_proposta_aberta: Optional[bool] = False
     ultimo_alerta: Optional[str] = None
     qtd_alertas: Optional[int] = 0
+
+# ==================== INSTITUICAO FINANCEIRA MODELS ====================
+
+class InstituicaoFinanceiraBase(BaseModel):
+    nome: str
+    ativo: bool = True
+
+class InstituicaoFinanceiraCreate(InstituicaoFinanceiraBase):
+    pass
+
+class InstituicaoFinanceiraResponse(InstituicaoFinanceiraBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+
+# ==================== TIPO PROJETO MODELS ====================
+
+class TipoProjetoBase(BaseModel):
+    nome: str
+    ativo: bool = True
+
+class TipoProjetoCreate(TipoProjetoBase):
+    pass
+
+class TipoProjetoResponse(TipoProjetoBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+
+# ==================== PROPOSTA MODELS ====================
+
+class PropostaBase(BaseModel):
+    cliente_id: str
+    tipo_projeto_id: str
+    instituicao_financeira_id: str
+    valor_credito: float
+    status: str = "aberta"  # aberta, convertida, desistida
+    motivo_desistencia: Optional[str] = None
+
+class PropostaCreate(BaseModel):
+    nome_completo: str
+    cpf: str
+    telefone: str
+    tipo_projeto_id: str
+    instituicao_financeira_id: str
+    valor_credito: float
+
+class PropostaResponse(PropostaBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    cliente_nome: str
+    cliente_cpf: str
+    cliente_telefone: Optional[str] = None
+    tipo_projeto_nome: str
+    instituicao_financeira_nome: str
+    created_at: str
+    updated_at: Optional[str] = None
+    qtd_alertas: int = 0
+    ultimo_alerta: Optional[str] = None
+    dias_aberta: int = 0
+
+# ==================== REQUISITO ETAPA MODELS ====================
+
+class RequisitoEtapaBase(BaseModel):
+    etapa_id: str
+    nome: str
+    campo: str  # nome do campo no documentos_check
+    ativo: bool = True
+
+class RequisitoEtapaCreate(RequisitoEtapaBase):
+    pass
+
+class RequisitoEtapaResponse(RequisitoEtapaBase):
+    model_config = ConfigDict(extra="ignore")
+    id: str
 
 class DocumentoCheck(BaseModel):
     # Documentos Pessoais Obrigatórios
