@@ -84,6 +84,7 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [etapas, setEtapas] = useState([]);
   const [expandedProject, setExpandedProject] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'kanban'
   
   // Filters
   const [filters, setFilters] = useState({
