@@ -18,6 +18,7 @@ import UsersPage from './pages/admin/Users';
 import Etapas from './pages/admin/Etapas';
 import ConfigPage from './pages/admin/Config';
 import Configuracoes from './pages/admin/Configuracoes';
+import EliminarDados from './pages/admin/EliminarDados';
 
 // Components
 import Layout from './components/Layout';
