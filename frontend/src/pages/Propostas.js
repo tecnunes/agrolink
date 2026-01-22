@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { Skeleton } from '../components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { ScrollArea, ScrollBar } from '../components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
   FileText,
@@ -24,6 +26,12 @@ import {
   Filter,
   ChevronDown,
   ChevronRight,
+  LayoutList,
+  Kanban,
+  Building2,
+  DollarSign,
+  User,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -40,6 +48,171 @@ const formatCPF = (cpf) => {
   return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 };
 
+// Kanban Card Component
+const PropostaKanbanCard = ({ proposta, onWhatsApp, onConverter, onDesistir, onDelete }) => {
+  return (
+    <Card
+      className={cn(
+        'transition-all duration-200 hover:shadow-md',
+        proposta.status === 'aberta' && proposta.dias_aberta > 3 && 'border-amber-500/50 bg-amber-500/5'
+      )}
+      data-testid={`proposta-kanban-card-${proposta.id}`}
+    >
+      <CardContent className="p-3 space-y-2">
+        {/* Tipo do Projeto */}
+        <div className="flex items-center justify-between">
+          <Badge variant="outline" className="text-xs font-semibold bg-primary/10 text-primary border-primary/30">
+            {proposta.tipo_projeto_nome}
+          </Badge>
+          {proposta.cliente_telefone && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 -mr-1"
+              onClick={() => onWhatsApp(proposta.cliente_telefone)}
+            >
+              <MessageCircle className="w-4 h-4 text-green-600" />
+            </Button>
+          )}
+        </div>
+
+        {/* Nome do Cliente */}
+        <p className="font-semibold text-sm leading-tight" title={proposta.cliente_nome}>
+          {proposta.cliente_nome}
+        </p>
+
+        {/* Valor do Crédito */}
+        <p className="text-lg font-bold text-primary">
+          {formatCurrency(proposta.valor_credito)}
+        </p>
+
+        {/* Instituição */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Building2 className="w-3 h-3" />
+          <span className="truncate">{proposta.instituicao_financeira_nome}</span>
+        </div>
+
+        {/* Dias aberta (apenas para abertas) */}
+        {proposta.status === 'aberta' && proposta.dias_aberta > 0 && (
+          <div className="p-2 rounded-md bg-amber-500/10 border border-amber-500/30">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                {proposta.dias_aberta} dias em aberto
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Motivo desistência (apenas para desistidas) */}
+        {proposta.status === 'desistida' && proposta.motivo_desistencia && (
+          <div className="p-2 rounded-md bg-red-500/10 border border-red-500/30">
+            <p className="text-xs text-red-600 dark:text-red-400 truncate" title={proposta.motivo_desistencia}>
+              {proposta.motivo_desistencia}
+            </p>
+          </div>
+        )}
+
+        {/* Actions (apenas para abertas) */}
+        {proposta.status === 'aberta' && (
+          <div className="flex items-center gap-1 pt-2 border-t">
+            <Button
+              size="sm"
+              variant="default"
+              className="flex-1 h-7 text-xs"
+              onClick={() => onConverter(proposta)}
+            >
+              <ArrowRight className="w-3 h-3 mr-1" />
+              Converter
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => onDesistir(proposta)}
+            >
+              <XCircle className="w-3 h-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs text-destructive"
+              onClick={() => onDelete(proposta)}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
+          <span>{formatCPF(proposta.cliente_cpf)}</span>
+          <span>{new Date(proposta.created_at).toLocaleDateString('pt-BR')}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Kanban Column Component
+const PropostaKanbanColumn = ({ title, icon: Icon, propostas, variant, onWhatsApp, onConverter, onDesistir, onDelete }) => {
+  const variants = {
+    warning: 'bg-amber-500/10 border-amber-500/30',
+    success: 'bg-emerald-500/10 border-emerald-500/30',
+    destructive: 'bg-red-500/10 border-red-500/30',
+  };
+
+  const iconVariants = {
+    warning: 'text-amber-600',
+    success: 'text-emerald-600',
+    destructive: 'text-red-600',
+  };
+
+  const totalValue = propostas.reduce((sum, p) => sum + (p.valor_credito || 0), 0);
+
+  return (
+    <div className="flex-shrink-0 w-[320px] bg-muted/30 rounded-lg border">
+      {/* Column Header */}
+      <div className={cn('p-3 border-b rounded-t-lg', variants[variant])}>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Icon className={cn('w-4 h-4', iconVariants[variant])} />
+            <h3 className="font-semibold text-sm">{title}</h3>
+          </div>
+          <Badge variant="secondary" className="h-5 text-xs">
+            {propostas.length}
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Total: {formatCurrency(totalValue)}
+        </p>
+      </div>
+
+      {/* Column Content */}
+      <ScrollArea className="h-[calc(100vh-380px)] min-h-[350px]">
+        <div className="p-2 space-y-2">
+          {propostas.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Nenhuma proposta
+            </div>
+          ) : (
+            propostas.map((proposta) => (
+              <PropostaKanbanCard
+                key={proposta.id}
+                proposta={proposta}
+                onWhatsApp={onWhatsApp}
+                onConverter={onConverter}
+                onDesistir={onDesistir}
+                onDelete={onDelete}
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+};
+
 const Propostas = () => {
   const [loading, setLoading] = useState(true);
   const [propostas, setPropostas] = useState([]);
@@ -49,9 +222,10 @@ const Propostas = () => {
   const [showDesistirDialog, setShowDesistirDialog] = useState(false);
   const [selectedProposta, setSelectedProposta] = useState(null);
   const [motivoDesistencia, setMotivoDesistencia] = useState('');
-  const [filterStatus, setFilterStatus] = useState('aberta');
+  const [filterStatus, setFilterStatus] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState('kanban'); // 'table' or 'kanban'
   
   const [formData, setFormData] = useState({
     nome_completo: '',
@@ -66,7 +240,7 @@ const Propostas = () => {
     try {
       setLoading(true);
       const [propostasRes, tiposRes, instRes] = await Promise.all([
-        propostasAPI.list({ status: filterStatus === 'todas' ? undefined : filterStatus }),
+        propostasAPI.list({}), // Fetch all for kanban view
         tiposProjetoAPI.list(),
         instituicoesAPI.list(),
       ]);
@@ -78,7 +252,7 @@ const Propostas = () => {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus]);
+  }, []);
 
   useEffect(() => {
     fetchData();
