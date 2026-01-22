@@ -28,7 +28,7 @@ Sistema CRM para controle e acompanhamento de clientes que desejam fazer emprés
 ### Dashboard
 - Visão geral de projetos ativos
 - Filtros por mês, nome e pendências
-- Indicadores: Total de projetos, Clientes, Pendências, Valor total de crédito
+- Indicadores: Total de projetos, Clientes, Pendências, Valor total de crédito, Valor de serviços
 - Alertas visuais para projetos com pendência (linha vermelha)
 
 ### Administração
