@@ -483,103 +483,230 @@ const Propostas = () => {
             <XCircle className="w-4 h-4 mr-2" />
             Limpar Alertas
           </Button>
-          <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
+          <Dialog open={showNewDialog} onOpenChange={(open) => { if (!open) handleCloseDialog(); else setShowNewDialog(true); }}>
             <DialogTrigger asChild>
               <Button data-testid="new-proposta-btn">
                 <Plus className="w-4 h-4 mr-2" />
                 Nova Proposta
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nova Proposta</DialogTitle>
                 <DialogDescription>
-                  Cadastre uma nova proposta de crédito rural
+                  Selecione um cliente existente ou cadastre um novo
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome_completo">Nome Completo *</Label>
-                  <Input
-                    id="nome_completo"
-                    name="nome_completo"
-                    value={formData.nome_completo}
-                    onChange={handleInputChange}
-                    placeholder="Nome do cliente"
-                    data-testid="input-nome"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                {/* Tabs para Cliente */}
+                <Tabs value={clientTab} onValueChange={setClientTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="existente" className="gap-2" data-testid="tab-cliente-existente">
+                      <User className="w-4 h-4" />
+                      Cliente Existente
+                    </TabsTrigger>
+                    <TabsTrigger value="novo" className="gap-2" data-testid="tab-cliente-novo">
+                      <UserPlus className="w-4 h-4" />
+                      Novo Cliente
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Tab: Cliente Existente */}
+                  <TabsContent value="existente" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label>Selecionar Cliente *</Label>
+                      <Popover open={clientPopoverOpen} onOpenChange={setClientPopoverOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={clientPopoverOpen}
+                            className="w-full justify-between font-normal"
+                            data-testid="select-cliente-existente"
+                          >
+                            {selectedClientId
+                              ? clients.find(c => c.id === selectedClientId)?.nome_completo || 'Cliente selecionado'
+                              : 'Buscar cliente...'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[400px] p-0" align="start">
+                          <Command shouldFilter={false}>
+                            <CommandInput
+                              placeholder="Buscar por nome ou CPF..."
+                              value={clientSearchTerm}
+                              onValueChange={setClientSearchTerm}
+                              data-testid="input-busca-cliente"
+                            />
+                            <CommandList>
+                              {loadingClients ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                  Carregando...
+                                </div>
+                              ) : clients.length === 0 ? (
+                                <CommandEmpty>
+                                  Nenhum cliente encontrado.
+                                  <Button
+                                    variant="link"
+                                    className="ml-1 p-0 h-auto"
+                                    onClick={() => {
+                                      setClientTab('novo');
+                                      setClientPopoverOpen(false);
+                                    }}
+                                  >
+                                    Cadastrar novo
+                                  </Button>
+                                </CommandEmpty>
+                              ) : (
+                                <CommandGroup>
+                                  {clients.map((client) => (
+                                    <CommandItem
+                                      key={client.id}
+                                      value={client.id}
+                                      onSelect={() => {
+                                        setSelectedClientId(client.id);
+                                        setClientPopoverOpen(false);
+                                      }}
+                                      className="cursor-pointer"
+                                      data-testid={`cliente-option-${client.id}`}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedClientId === client.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="font-medium">{client.nome_completo}</span>
+                                        <span className="text-xs text-muted-foreground">
+                                          CPF: {formatCPF(client.cpf)} • Tel: {client.telefone}
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {selectedClientId && (
+                        <div className="p-3 rounded-lg bg-muted/50 border">
+                          {(() => {
+                            const client = clients.find(c => c.id === selectedClientId);
+                            if (!client) return null;
+                            return (
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <User className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold">{client.nome_completo}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatCPF(client.cpf)} • {client.telefone}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Novo Cliente */}
+                  <TabsContent value="novo" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="nome_completo">Nome Completo *</Label>
+                      <Input
+                        id="nome_completo"
+                        name="nome_completo"
+                        value={formData.nome_completo}
+                        onChange={handleInputChange}
+                        placeholder="Nome do cliente"
+                        data-testid="input-nome"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cpf">CPF *</Label>
+                        <Input
+                          id="cpf"
+                          name="cpf"
+                          value={formatCPF(formData.cpf)}
+                          onChange={handleCPFChange}
+                          placeholder="000.000.000-00"
+                          data-testid="input-cpf"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telefone">Telefone *</Label>
+                        <Input
+                          id="telefone"
+                          name="telefone"
+                          value={formData.telefone}
+                          onChange={handlePhoneChange}
+                          placeholder="(00) 00000-0000"
+                          data-testid="input-telefone"
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Campos comuns da proposta */}
+                <div className="border-t pt-4 space-y-4">
+                  <h4 className="font-medium text-sm text-muted-foreground">Dados da Proposta</h4>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF *</Label>
-                    <Input
-                      id="cpf"
-                      name="cpf"
-                      value={formatCPF(formData.cpf)}
-                      onChange={handleCPFChange}
-                      placeholder="000.000.000-00"
-                      data-testid="input-cpf"
-                    />
+                    <Label htmlFor="tipo_projeto_id">Tipo de Projeto *</Label>
+                    <Select
+                      value={formData.tipo_projeto_id}
+                      onValueChange={(v) => setFormData(prev => ({ ...prev, tipo_projeto_id: v }))}
+                    >
+                      <SelectTrigger data-testid="select-tipo-projeto">
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tiposProjeto.map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone *</Label>
+                    <Label htmlFor="instituicao_financeira_id">Instituição Financeira *</Label>
+                    <Select
+                      value={formData.instituicao_financeira_id}
+                      onValueChange={(v) => setFormData(prev => ({ ...prev, instituicao_financeira_id: v }))}
+                    >
+                      <SelectTrigger data-testid="select-instituicao">
+                        <SelectValue placeholder="Selecione a instituição" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {instituicoes.map(i => (
+                          <SelectItem key={i.id} value={i.id}>{i.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="valor_credito">Valor do Crédito *</Label>
                     <Input
-                      id="telefone"
-                      name="telefone"
-                      value={formData.telefone}
-                      onChange={handlePhoneChange}
-                      placeholder="(00) 00000-0000"
-                      data-testid="input-telefone"
+                      id="valor_credito"
+                      name="valor_credito"
+                      type="number"
+                      step="0.01"
+                      value={formData.valor_credito}
+                      onChange={handleInputChange}
+                      placeholder="0,00"
+                      data-testid="input-valor"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tipo_projeto_id">Tipo de Projeto *</Label>
-                  <Select
-                    value={formData.tipo_projeto_id}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, tipo_projeto_id: v }))}
-                  >
-                    <SelectTrigger data-testid="select-tipo-projeto">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposProjeto.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="instituicao_financeira_id">Instituição Financeira *</Label>
-                  <Select
-                    value={formData.instituicao_financeira_id}
-                    onValueChange={(v) => setFormData(prev => ({ ...prev, instituicao_financeira_id: v }))}
-                  >
-                    <SelectTrigger data-testid="select-instituicao">
-                      <SelectValue placeholder="Selecione a instituição" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instituicoes.map(i => (
-                        <SelectItem key={i.id} value={i.id}>{i.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="valor_credito">Valor do Crédito *</Label>
-                  <Input
-                    id="valor_credito"
-                    name="valor_credito"
-                    type="number"
-                    step="0.01"
-                    value={formData.valor_credito}
-                    onChange={handleInputChange}
-                    placeholder="0,00"
-                    data-testid="input-valor"
-                  />
-                </div>
+
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowNewDialog(false)}>
+                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
                     Cancelar
                   </Button>
                   <Button type="submit" data-testid="submit-proposta">
