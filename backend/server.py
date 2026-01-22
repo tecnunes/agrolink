@@ -863,15 +863,38 @@ async def get_project(project_id: str, current_user = Depends(get_auth_user)):
                 tem_pendencia = True
                 break
     
+    # Check stage-specific requirements
     docs = project.get("documentos_check", {})
-    if not all([docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
-        tem_pendencia = True
+    etapa_nome = project.get("etapa_atual_nome", "")
+    
+    if "Coleta de Documentos" in etapa_nome:
+        if not all([docs.get("rg_cnh"), docs.get("conta_banco_brasil"), docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
+            tem_pendencia = True
+    elif "Desenvolvimento do Projeto" in etapa_nome:
+        if not docs.get("projeto_implementado"):
+            tem_pendencia = True
+    elif "Coletar Assinaturas" in etapa_nome:
+        if not docs.get("projeto_assinado"):
+            tem_pendencia = True
+    elif "Protocolo CENOP" in etapa_nome:
+        if not docs.get("projeto_protocolado"):
+            tem_pendencia = True
+    elif "Instrumento de Crédito" in etapa_nome:
+        if not all([docs.get("assinatura_agencia"), docs.get("upload_contrato")]):
+            tem_pendencia = True
+    elif "GTA e Nota Fiscal" in etapa_nome:
+        if not all([docs.get("gta_emitido"), docs.get("nota_fiscal_emitida")]):
+            tem_pendencia = True
+    elif "Projeto Creditado" in etapa_nome:
+        if not docs.get("comprovante_servico_pago"):
+            tem_pendencia = True
     
     return ProjetoResponse(
         **project,
         cliente_nome=client["nome_completo"],
         cliente_cpf=client["cpf"],
-        valor_credito=client["valor_credito"],
+        cliente_telefone=client.get("telefone"),
+        valor_credito=project.get("valor_credito", 0),
         tem_pendencia=tem_pendencia
     )
 
