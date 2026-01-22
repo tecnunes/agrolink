@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { propostasAPI, tiposProjetoAPI, instituicoesAPI, alertsAPI } from '../lib/api';
+import { propostasAPI, tiposProjetoAPI, instituicoesAPI, alertsAPI, clientsAPI } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -10,8 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { Skeleton } from '../components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { ScrollArea, ScrollBar } from '../components/ui/scroll-area';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { toast } from 'sonner';
 import {
   FileText,
@@ -32,6 +34,9 @@ import {
   DollarSign,
   User,
   AlertTriangle,
+  UserPlus,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
