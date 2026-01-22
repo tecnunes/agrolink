@@ -280,6 +280,47 @@ const ClientForm = () => {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="estado">Estado</Label>
+                <Select
+                  value={formData.estado}
+                  onValueChange={(v) => handleChange('estado', v)}
+                >
+                  <SelectTrigger data-testid="select-estado">
+                    <SelectValue placeholder="Selecione o estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Selecione...</SelectItem>
+                    {estados.map((e) => (
+                      <SelectItem key={e.sigla} value={e.sigla}>
+                        {e.sigla} - {e.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade</Label>
+                <Select
+                  value={formData.cidade}
+                  onValueChange={(v) => handleChange('cidade', v)}
+                  disabled={!formData.estado || loadingCidades}
+                >
+                  <SelectTrigger data-testid="select-cidade">
+                    <SelectValue placeholder={loadingCidades ? 'Carregando...' : 'Selecione a cidade'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Selecione...</SelectItem>
+                    {cidades.map((c) => (
+                      <SelectItem key={c.id} value={c.nome}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="md:col-span-2 space-y-2">
                 <Label htmlFor="endereco">Endereço</Label>
                 <Input
