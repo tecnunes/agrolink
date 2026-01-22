@@ -62,3 +62,7 @@ test_reports/
 
 # Yarn
 yarn-error.log
+-e 
+# Environment files
+*.env
+*.env.*
