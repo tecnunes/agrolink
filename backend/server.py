@@ -361,6 +361,34 @@ async def init_default_data():
     existing_config = await db.config.find_one({})
     if not existing_config:
         await db.config.insert_one({"logo_path": None, "campos_extras_cliente": []})
+    
+    # Create default instituicoes financeiras if not exists
+    existing_instituicoes = await db.instituicoes_financeiras.count_documents({})
+    if existing_instituicoes == 0:
+        default_instituicoes = [
+            {"id": str(uuid.uuid4()), "nome": "Banco do Brasil", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Sicredi", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Sicoob", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Cresol", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Caixa Econômica Federal", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Banco do Nordeste (BNB)", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Banco da Amazônia", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Itaú Unibanco", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Bradesco", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Santander", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "Credicoamo", "ativo": True},
+        ]
+        await db.instituicoes_financeiras.insert_many(default_instituicoes)
+    
+    # Create default tipos de projeto if not exists
+    existing_tipos = await db.tipos_projeto.count_documents({})
+    if existing_tipos == 0:
+        default_tipos = [
+            {"id": str(uuid.uuid4()), "nome": "PRONAF A", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "PRONAF B", "ativo": True},
+            {"id": str(uuid.uuid4()), "nome": "CUSTEIO", "ativo": True},
+        ]
+        await db.tipos_projeto.insert_many(default_tipos)
 
 @app.on_event("startup")
 async def startup_event():
