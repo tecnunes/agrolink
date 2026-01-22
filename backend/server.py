@@ -175,19 +175,25 @@ class ProjetoBase(BaseModel):
     data_arquivamento: Optional[str] = None
     numero_contrato: Optional[str] = None
     valor_servico: Optional[float] = None
+    valor_credito: float = 0.0
+    tipo_projeto: str = "PRONAF A"  # PRONAF A, PRONAF B, CUSTEIO
 
 class ProjetoCreate(BaseModel):
     cliente_id: str
+    valor_credito: float
+    tipo_projeto: str = "PRONAF A"
 
 class ProjetoResponse(ProjetoBase):
     model_config = ConfigDict(extra="ignore")
     id: str
     cliente_nome: str
     cliente_cpf: str
+    cliente_telefone: Optional[str] = None
     valor_credito: float
     tem_pendencia: bool = False
     numero_contrato: Optional[str] = None
     valor_servico: Optional[float] = None
+    tipo_projeto: Optional[str] = None
 
 class ConfigBase(BaseModel):
     logo_path: Optional[str] = None
