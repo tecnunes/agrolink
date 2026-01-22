@@ -168,4 +168,10 @@ export const dashboardAPI = {
   stats: () => api.get('/dashboard/stats'),
 };
 
+// Master Only
+export const masterAPI = {
+  getDataStats: () => api.get('/master/data-stats'),
+  resetAllData: () => api.delete('/master/reset-all-data'),
+};
+
 export default api;
