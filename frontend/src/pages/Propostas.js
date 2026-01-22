@@ -271,6 +271,36 @@ const Propostas = () => {
     fetchData();
   }, [fetchData]);
 
+  // Buscar clientes para o select
+  const fetchClients = useCallback(async (search = '') => {
+    try {
+      setLoadingClients(true);
+      const res = await clientsAPI.list(search);
+      setClients(res.data || []);
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+    } finally {
+      setLoadingClients(false);
+    }
+  }, []);
+
+  // Carregar clientes quando o modal abrir
+  useEffect(() => {
+    if (showNewDialog) {
+      fetchClients();
+    }
+  }, [showNewDialog, fetchClients]);
+
+  // Buscar clientes conforme digita
+  useEffect(() => {
+    if (showNewDialog && clientTab === 'existente') {
+      const timer = setTimeout(() => {
+        fetchClients(clientSearchTerm);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [clientSearchTerm, showNewDialog, clientTab, fetchClients]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
