@@ -1174,6 +1174,7 @@ async def update_documents_check(project_id: str, data: dict, current_user = Dep
     
     # Campos de checklist por etapa
     check_fields = [
+        "rg_cnh", "conta_banco_brasil",  # Documentos Pessoais Obrigatórios
         "ccu_titulo", "saldo_iagro", "car",  # Coleta de Documentos
         "projeto_implementado",  # Desenvolvimento do Projeto
         "projeto_assinado",  # Coletar Assinaturas
