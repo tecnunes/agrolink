@@ -1724,6 +1724,547 @@ async def get_all_pending_alerts(current_user = Depends(get_auth_user)):
     
     return {"alerts": alerts, "total": len(alerts)}
 
+# ==================== INSTITUICAO FINANCEIRA ROUTES ====================
+
+@api_router.get("/instituicoes-financeiras", response_model=List[InstituicaoFinanceiraResponse])
+async def list_instituicoes_financeiras(current_user = Depends(get_auth_user)):
+    instituicoes = await db.instituicoes_financeiras.find({"ativo": True}, {"_id": 0}).to_list(100)
+    return [InstituicaoFinanceiraResponse(**i) for i in instituicoes]
+
+@api_router.get("/instituicoes-financeiras/all", response_model=List[InstituicaoFinanceiraResponse])
+async def list_all_instituicoes_financeiras(current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    instituicoes = await db.instituicoes_financeiras.find({}, {"_id": 0}).to_list(100)
+    return [InstituicaoFinanceiraResponse(**i) for i in instituicoes]
+
+@api_router.post("/instituicoes-financeiras", response_model=InstituicaoFinanceiraResponse)
+async def create_instituicao_financeira(data: InstituicaoFinanceiraCreate, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    new_instituicao = {
+        "id": str(uuid.uuid4()),
+        "nome": data.nome,
+        "ativo": data.ativo
+    }
+    await db.instituicoes_financeiras.insert_one(new_instituicao)
+    return InstituicaoFinanceiraResponse(**new_instituicao)
+
+@api_router.put("/instituicoes-financeiras/{instituicao_id}")
+async def update_instituicao_financeira(instituicao_id: str, data: dict, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    update_data = {k: v for k, v in data.items() if k in ["nome", "ativo"]}
+    if update_data:
+        await db.instituicoes_financeiras.update_one({"id": instituicao_id}, {"$set": update_data})
+    return {"message": "Instituição atualizada"}
+
+@api_router.delete("/instituicoes-financeiras/{instituicao_id}")
+async def delete_instituicao_financeira(instituicao_id: str, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    await db.instituicoes_financeiras.update_one({"id": instituicao_id}, {"$set": {"ativo": False}})
+    return {"message": "Instituição desativada"}
+
+# ==================== TIPO PROJETO ROUTES ====================
+
+@api_router.get("/tipos-projeto", response_model=List[TipoProjetoResponse])
+async def list_tipos_projeto(current_user = Depends(get_auth_user)):
+    tipos = await db.tipos_projeto.find({"ativo": True}, {"_id": 0}).to_list(100)
+    return [TipoProjetoResponse(**t) for t in tipos]
+
+@api_router.get("/tipos-projeto/all", response_model=List[TipoProjetoResponse])
+async def list_all_tipos_projeto(current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    tipos = await db.tipos_projeto.find({}, {"_id": 0}).to_list(100)
+    return [TipoProjetoResponse(**t) for t in tipos]
+
+@api_router.post("/tipos-projeto", response_model=TipoProjetoResponse)
+async def create_tipo_projeto(data: TipoProjetoCreate, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    new_tipo = {
+        "id": str(uuid.uuid4()),
+        "nome": data.nome,
+        "ativo": data.ativo
+    }
+    await db.tipos_projeto.insert_one(new_tipo)
+    return TipoProjetoResponse(**new_tipo)
+
+@api_router.put("/tipos-projeto/{tipo_id}")
+async def update_tipo_projeto(tipo_id: str, data: dict, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    update_data = {k: v for k, v in data.items() if k in ["nome", "ativo"]}
+    if update_data:
+        await db.tipos_projeto.update_one({"id": tipo_id}, {"$set": update_data})
+    return {"message": "Tipo de projeto atualizado"}
+
+@api_router.delete("/tipos-projeto/{tipo_id}")
+async def delete_tipo_projeto(tipo_id: str, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    await db.tipos_projeto.update_one({"id": tipo_id}, {"$set": {"ativo": False}})
+    return {"message": "Tipo de projeto desativado"}
+
+# ==================== REQUISITOS ETAPA ROUTES ====================
+
+@api_router.get("/requisitos-etapa", response_model=List[RequisitoEtapaResponse])
+async def list_requisitos_etapa(etapa_id: Optional[str] = None, current_user = Depends(get_auth_user)):
+    query = {"ativo": True}
+    if etapa_id:
+        query["etapa_id"] = etapa_id
+    requisitos = await db.requisitos_etapa.find(query, {"_id": 0}).to_list(100)
+    return [RequisitoEtapaResponse(**r) for r in requisitos]
+
+@api_router.post("/requisitos-etapa", response_model=RequisitoEtapaResponse)
+async def create_requisito_etapa(data: RequisitoEtapaCreate, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    new_requisito = {
+        "id": str(uuid.uuid4()),
+        "etapa_id": data.etapa_id,
+        "nome": data.nome,
+        "campo": data.campo,
+        "ativo": data.ativo
+    }
+    await db.requisitos_etapa.insert_one(new_requisito)
+    return RequisitoEtapaResponse(**new_requisito)
+
+@api_router.put("/requisitos-etapa/{requisito_id}")
+async def update_requisito_etapa(requisito_id: str, data: dict, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    update_data = {k: v for k, v in data.items() if k in ["nome", "campo", "ativo"]}
+    if update_data:
+        await db.requisitos_etapa.update_one({"id": requisito_id}, {"$set": update_data})
+    return {"message": "Requisito atualizado"}
+
+@api_router.delete("/requisitos-etapa/{requisito_id}")
+async def delete_requisito_etapa(requisito_id: str, current_user = Depends(get_auth_user)):
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    await db.requisitos_etapa.update_one({"id": requisito_id}, {"$set": {"ativo": False}})
+    return {"message": "Requisito desativado"}
+
+# ==================== PROPOSTA ROUTES ====================
+
+@api_router.post("/propostas", response_model=PropostaResponse)
+async def create_proposta(data: PropostaCreate, current_user = Depends(get_auth_user)):
+    # Validate CPF
+    cpf_clean = re.sub(r'\D', '', data.cpf)
+    if len(cpf_clean) != 11:
+        raise HTTPException(status_code=400, detail="CPF inválido")
+    
+    # Check if client already exists
+    existing_client = await db.clients.find_one({"cpf": cpf_clean}, {"_id": 0})
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    if existing_client:
+        client_id = existing_client["id"]
+        # Update client info if needed
+        await db.clients.update_one(
+            {"id": client_id},
+            {"$set": {
+                "nome_completo": data.nome_completo.upper(),
+                "telefone": data.telefone
+            }}
+        )
+    else:
+        # Create new client
+        client_id = str(uuid.uuid4())
+        new_client = {
+            "id": client_id,
+            "nome_completo": data.nome_completo.upper(),
+            "cpf": cpf_clean,
+            "telefone": data.telefone,
+            "endereco": "",
+            "data_nascimento": "",
+            "parceiro_id": None,
+            "parceiro_nome": None,
+            "estado": None,
+            "cidade": None,
+            "created_at": now,
+            "ultimo_alerta": None,
+            "qtd_alertas": 0
+        }
+        await db.clients.insert_one(new_client)
+        
+        # Create client folder
+        client_folder = UPLOAD_DIR / client_id
+        client_folder.mkdir(exist_ok=True)
+    
+    # Get tipo projeto and instituicao names
+    tipo_projeto = await db.tipos_projeto.find_one({"id": data.tipo_projeto_id}, {"_id": 0})
+    instituicao = await db.instituicoes_financeiras.find_one({"id": data.instituicao_financeira_id}, {"_id": 0})
+    
+    if not tipo_projeto:
+        raise HTTPException(status_code=400, detail="Tipo de projeto não encontrado")
+    if not instituicao:
+        raise HTTPException(status_code=400, detail="Instituição financeira não encontrada")
+    
+    # Create proposta
+    new_proposta = {
+        "id": str(uuid.uuid4()),
+        "cliente_id": client_id,
+        "tipo_projeto_id": data.tipo_projeto_id,
+        "tipo_projeto_nome": tipo_projeto["nome"],
+        "instituicao_financeira_id": data.instituicao_financeira_id,
+        "instituicao_financeira_nome": instituicao["nome"],
+        "valor_credito": data.valor_credito,
+        "status": "aberta",
+        "motivo_desistencia": None,
+        "created_at": now,
+        "updated_at": now,
+        "qtd_alertas": 0,
+        "ultimo_alerta": None
+    }
+    
+    await db.propostas.insert_one(new_proposta)
+    
+    return PropostaResponse(
+        **new_proposta,
+        cliente_nome=data.nome_completo.upper(),
+        cliente_cpf=cpf_clean,
+        cliente_telefone=data.telefone,
+        dias_aberta=0
+    )
+
+@api_router.get("/propostas", response_model=List[PropostaResponse])
+async def list_propostas(
+    status: Optional[str] = None,
+    current_user = Depends(get_auth_user)
+):
+    query = {}
+    if status:
+        query["status"] = status
+    
+    propostas = await db.propostas.find(query, {"_id": 0}).to_list(10000)
+    
+    now = datetime.now(timezone.utc)
+    result = []
+    
+    for proposta in propostas:
+        client = await db.clients.find_one({"id": proposta["cliente_id"]}, {"_id": 0})
+        if not client:
+            continue
+        
+        created_at = datetime.fromisoformat(proposta.get('created_at', now.isoformat()).replace('Z', '+00:00'))
+        dias_aberta = (now - created_at).days
+        
+        result.append(PropostaResponse(
+            **proposta,
+            cliente_nome=client["nome_completo"],
+            cliente_cpf=client["cpf"],
+            cliente_telefone=client.get("telefone"),
+            dias_aberta=dias_aberta
+        ))
+    
+    return result
+
+@api_router.get("/propostas/{proposta_id}", response_model=PropostaResponse)
+async def get_proposta(proposta_id: str, current_user = Depends(get_auth_user)):
+    proposta = await db.propostas.find_one({"id": proposta_id}, {"_id": 0})
+    if not proposta:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    
+    client = await db.clients.find_one({"id": proposta["cliente_id"]}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    now = datetime.now(timezone.utc)
+    created_at = datetime.fromisoformat(proposta.get('created_at', now.isoformat()).replace('Z', '+00:00'))
+    dias_aberta = (now - created_at).days
+    
+    return PropostaResponse(
+        **proposta,
+        cliente_nome=client["nome_completo"],
+        cliente_cpf=client["cpf"],
+        cliente_telefone=client.get("telefone"),
+        dias_aberta=dias_aberta
+    )
+
+@api_router.put("/propostas/{proposta_id}/converter")
+async def converter_proposta_para_projeto(proposta_id: str, current_user = Depends(get_auth_user)):
+    """Converte uma proposta em projeto"""
+    proposta = await db.propostas.find_one({"id": proposta_id}, {"_id": 0})
+    if not proposta:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    
+    if proposta["status"] != "aberta":
+        raise HTTPException(status_code=400, detail="Proposta não está aberta")
+    
+    # Check if client already has active project
+    existing_project = await db.projects.find_one({
+        "cliente_id": proposta["cliente_id"],
+        "status": "em_andamento"
+    })
+    if existing_project:
+        raise HTTPException(status_code=400, detail="Cliente já possui projeto em andamento")
+    
+    # Get first stage
+    first_etapa = await db.etapas.find_one({"ativo": True}, {"_id": 0}, sort=[("ordem", 1)])
+    if not first_etapa:
+        raise HTTPException(status_code=400, detail="Nenhuma etapa configurada")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Create project from proposta
+    new_project = {
+        "id": str(uuid.uuid4()),
+        "cliente_id": proposta["cliente_id"],
+        "etapa_atual_id": first_etapa["id"],
+        "etapa_atual_nome": first_etapa["nome"],
+        "status": "em_andamento",
+        "motivo_desistencia": None,
+        "documentos_check": {
+            "rg_cnh": False,
+            "conta_banco_brasil": False,
+            "ccu_titulo": False,
+            "saldo_iagro": False,
+            "car": False,
+            "projeto_implementado": False,
+            "projeto_assinado": False,
+            "projeto_protocolado": False,
+            "assinatura_agencia": False,
+            "upload_contrato": False,
+            "gta_emitido": False,
+            "nota_fiscal_emitida": False,
+            "comprovante_servico_pago": False
+        },
+        "historico_etapas": [{
+            "etapa_id": first_etapa["id"],
+            "etapa_nome": first_etapa["nome"],
+            "data_inicio": now,
+            "data_fim": None,
+            "dias_duracao": 0,
+            "pendencias": [],
+            "observacoes": []
+        }],
+        "data_inicio": now,
+        "data_arquivamento": None,
+        "valor_credito": proposta["valor_credito"],
+        "tipo_projeto": proposta["tipo_projeto_nome"],
+        "tipo_projeto_id": proposta["tipo_projeto_id"],
+        "instituicao_financeira_id": proposta["instituicao_financeira_id"],
+        "instituicao_financeira_nome": proposta["instituicao_financeira_nome"],
+        "proposta_id": proposta_id,
+        "numero_contrato": None,
+        "valor_servico": None
+    }
+    
+    await db.projects.insert_one(new_project)
+    
+    # Update proposta status
+    await db.propostas.update_one(
+        {"id": proposta_id},
+        {"$set": {"status": "convertida", "updated_at": now}}
+    )
+    
+    return {"message": "Proposta convertida em projeto", "project_id": new_project["id"]}
+
+@api_router.put("/propostas/{proposta_id}/desistir")
+async def desistir_proposta(proposta_id: str, data: dict, current_user = Depends(get_auth_user)):
+    """Marca proposta como desistida"""
+    proposta = await db.propostas.find_one({"id": proposta_id}, {"_id": 0})
+    if not proposta:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    
+    if proposta["status"] != "aberta":
+        raise HTTPException(status_code=400, detail="Proposta não está aberta")
+    
+    motivo = data.get("motivo", "")
+    now = datetime.now(timezone.utc).isoformat()
+    
+    await db.propostas.update_one(
+        {"id": proposta_id},
+        {"$set": {
+            "status": "desistida",
+            "motivo_desistencia": motivo,
+            "updated_at": now
+        }}
+    )
+    
+    return {"message": "Proposta marcada como desistida"}
+
+@api_router.delete("/propostas/{proposta_id}")
+async def delete_proposta(proposta_id: str, current_user = Depends(get_auth_user)):
+    proposta = await db.propostas.find_one({"id": proposta_id}, {"_id": 0})
+    if not proposta:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    
+    await db.propostas.delete_one({"id": proposta_id})
+    return {"message": "Proposta excluída"}
+
+# ==================== ALERTS FOR PROPOSTAS ====================
+
+@api_router.get("/alerts/propostas")
+async def get_proposta_alerts(current_user = Depends(get_auth_user)):
+    """Get open propostas that need follow-up (notifies 3x every 3 days)"""
+    now = datetime.now(timezone.utc)
+    
+    # Get all open propostas
+    propostas = await db.propostas.find({"status": "aberta"}, {"_id": 0}).to_list(10000)
+    
+    alerts = []
+    for proposta in propostas:
+        client = await db.clients.find_one({"id": proposta["cliente_id"]}, {"_id": 0})
+        if not client:
+            continue
+        
+        qtd_alertas = proposta.get("qtd_alertas", 0)
+        ultimo_alerta = proposta.get("ultimo_alerta")
+        
+        # Calculate days open
+        created_at = datetime.fromisoformat(proposta.get('created_at', now.isoformat()).replace('Z', '+00:00'))
+        dias_aberta = (now - created_at).days
+        
+        # Check if should show alert (max 3 times, every 3 days)
+        if qtd_alertas < 3:
+            should_alert = False
+            
+            if ultimo_alerta is None:
+                should_alert = True
+            else:
+                ultimo_dt = datetime.fromisoformat(ultimo_alerta.replace('Z', '+00:00'))
+                if (now - ultimo_dt).days >= 3:
+                    should_alert = True
+            
+            if should_alert:
+                # Update alert count
+                await db.propostas.update_one(
+                    {"id": proposta["id"]},
+                    {"$set": {
+                        "ultimo_alerta": now.isoformat(),
+                        "qtd_alertas": qtd_alertas + 1
+                    }}
+                )
+                qtd_alertas += 1
+            
+            alerts.append({
+                "id": proposta["id"],
+                "tipo": "proposta",
+                "cliente_id": client["id"],
+                "cliente_nome": client["nome_completo"],
+                "cliente_cpf": client["cpf"],
+                "telefone": client.get("telefone"),
+                "tipo_projeto": proposta.get("tipo_projeto_nome"),
+                "instituicao": proposta.get("instituicao_financeira_nome"),
+                "valor_credito": proposta["valor_credito"],
+                "dias_aberta": dias_aberta,
+                "alerta_numero": qtd_alertas,
+                "data_cadastro": proposta.get("created_at"),
+                "mensagem": f"Proposta aberta há {dias_aberta} dias"
+            })
+    
+    return {"alerts": alerts, "total": len(alerts)}
+
+@api_router.put("/alerts/propostas/{proposta_id}/clear")
+async def clear_proposta_alert(proposta_id: str, current_user = Depends(get_auth_user)):
+    """Clear alert for a specific proposta"""
+    await db.propostas.update_one(
+        {"id": proposta_id},
+        {"$set": {"qtd_alertas": 3}}  # Set to max to stop showing
+    )
+    return {"message": "Alerta limpo"}
+
+@api_router.put("/alerts/propostas/clear-all")
+async def clear_all_proposta_alerts(current_user = Depends(get_auth_user)):
+    """Clear all proposta alerts"""
+    await db.propostas.update_many(
+        {"status": "aberta"},
+        {"$set": {"qtd_alertas": 3}}
+    )
+    return {"message": "Todos os alertas foram limpos"}
+
+# ==================== CLIENT HISTORY ====================
+
+@api_router.get("/clients/{client_id}/history")
+async def get_client_history(client_id: str, current_user = Depends(get_auth_user)):
+    """Get complete history of a client including projects and propostas"""
+    client = await db.clients.find_one({"id": client_id}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Get all projects for this client
+    projects = await db.projects.find({"cliente_id": client_id}, {"_id": 0}).to_list(100)
+    
+    # Get all propostas for this client
+    propostas = await db.propostas.find({"cliente_id": client_id}, {"_id": 0}).to_list(100)
+    
+    return {
+        "client": client,
+        "projects": projects,
+        "propostas": propostas,
+        "total_projects": len(projects),
+        "total_propostas": len(propostas)
+    }
+
+# ==================== ESTADOS E CIDADES ====================
+
+ESTADOS_BRASIL = [
+    {"sigla": "AC", "nome": "Acre"},
+    {"sigla": "AL", "nome": "Alagoas"},
+    {"sigla": "AP", "nome": "Amapá"},
+    {"sigla": "AM", "nome": "Amazonas"},
+    {"sigla": "BA", "nome": "Bahia"},
+    {"sigla": "CE", "nome": "Ceará"},
+    {"sigla": "DF", "nome": "Distrito Federal"},
+    {"sigla": "ES", "nome": "Espírito Santo"},
+    {"sigla": "GO", "nome": "Goiás"},
+    {"sigla": "MA", "nome": "Maranhão"},
+    {"sigla": "MT", "nome": "Mato Grosso"},
+    {"sigla": "MS", "nome": "Mato Grosso do Sul"},
+    {"sigla": "MG", "nome": "Minas Gerais"},
+    {"sigla": "PA", "nome": "Pará"},
+    {"sigla": "PB", "nome": "Paraíba"},
+    {"sigla": "PR", "nome": "Paraná"},
+    {"sigla": "PE", "nome": "Pernambuco"},
+    {"sigla": "PI", "nome": "Piauí"},
+    {"sigla": "RJ", "nome": "Rio de Janeiro"},
+    {"sigla": "RN", "nome": "Rio Grande do Norte"},
+    {"sigla": "RS", "nome": "Rio Grande do Sul"},
+    {"sigla": "RO", "nome": "Rondônia"},
+    {"sigla": "RR", "nome": "Roraima"},
+    {"sigla": "SC", "nome": "Santa Catarina"},
+    {"sigla": "SP", "nome": "São Paulo"},
+    {"sigla": "SE", "nome": "Sergipe"},
+    {"sigla": "TO", "nome": "Tocantins"},
+]
+
+@api_router.get("/estados")
+async def list_estados():
+    """List all Brazilian states"""
+    return ESTADOS_BRASIL
+
+@api_router.get("/cidades/{estado_sigla}")
+async def list_cidades(estado_sigla: str):
+    """List cities for a given state (using IBGE API)"""
+    import httpx
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"https://servicodados.ibge.gov.br/api/v1/localidades/estados/{estado_sigla}/municipios"
+            )
+            if response.status_code == 200:
+                cidades = response.json()
+                return [{"id": c["id"], "nome": c["nome"]} for c in cidades]
+    except Exception as e:
+        logger.error(f"Error fetching cities: {e}")
+    
+    return []
+
 # Include the router in the main app
 app.include_router(api_router)
 
