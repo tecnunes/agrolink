@@ -46,6 +46,8 @@ Sistema CRM chamado AgroLink para controle de clientes que desejam fazer emprés
 - ✅ Login com tema agrícola
 - ✅ Layout responsivo (Desktop/Tablet/Mobile)
 - ✅ Dashboard com 5 cards de estatísticas
+- ✅ **Visualização Kanban** (nova!) - colunas por etapa, cards com detalhes
+- ✅ **Toggle Tabela/Kanban** - alterna entre visualizações
 - ✅ Tabela de projetos com expansão para timeline
 - ✅ Formulário de cadastro de cliente (com Estado/Cidade)
 - ✅ Listagem de clientes com busca
