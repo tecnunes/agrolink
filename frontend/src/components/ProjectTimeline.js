@@ -93,49 +93,80 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
     
     // Coleta de Documentos
     if (currentEtapaNome.includes('Coleta de Documentos')) {
-      const hasPending = !docs.ccu_titulo || !docs.saldo_iagro || !docs.car;
+      const hasPending = !docs.rg_cnh || !docs.conta_banco_brasil || !docs.ccu_titulo || !docs.saldo_iagro || !docs.car;
       return (
-        <div className="p-4 rounded-lg border bg-muted/30">
-          <h4 className="font-medium mb-3">Documentos Obrigatórios</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="ccu"
-                checked={docs.ccu_titulo}
-                onCheckedChange={(v) => handleDocumentCheck('ccu_titulo', v)}
-                data-testid="doc-ccu"
-              />
-              <Label htmlFor="ccu" className="text-sm cursor-pointer">
-                CCU / Título / Contrato / Escritura
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="iagro"
-                checked={docs.saldo_iagro}
-                onCheckedChange={(v) => handleDocumentCheck('saldo_iagro', v)}
-                data-testid="doc-iagro"
-              />
-              <Label htmlFor="iagro" className="text-sm cursor-pointer">
-                Saldo IAGRO
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="car"
-                checked={docs.car}
-                onCheckedChange={(v) => handleDocumentCheck('car', v)}
-                data-testid="doc-car"
-              />
-              <Label htmlFor="car" className="text-sm cursor-pointer">
-                CAR
-              </Label>
+        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+          <div>
+            <h4 className="font-medium mb-3">Documentos Pessoais Obrigatórios</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="rg_cnh"
+                  checked={docs.rg_cnh}
+                  onCheckedChange={(v) => handleDocumentCheck('rg_cnh', v)}
+                  data-testid="doc-rg-cnh"
+                />
+                <Label htmlFor="rg_cnh" className="text-sm cursor-pointer">
+                  Cópia RG ou CNH
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="conta_banco_brasil"
+                  checked={docs.conta_banco_brasil}
+                  onCheckedChange={(v) => handleDocumentCheck('conta_banco_brasil', v)}
+                  data-testid="doc-conta-bb"
+                />
+                <Label htmlFor="conta_banco_brasil" className="text-sm cursor-pointer">
+                  Conta no Banco do Brasil
+                </Label>
+              </div>
             </div>
           </div>
+          
+          <div>
+            <h4 className="font-medium mb-3">Documentos do Projeto Obrigatórios</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="ccu"
+                  checked={docs.ccu_titulo}
+                  onCheckedChange={(v) => handleDocumentCheck('ccu_titulo', v)}
+                  data-testid="doc-ccu"
+                />
+                <Label htmlFor="ccu" className="text-sm cursor-pointer">
+                  CCU / Título / Contrato / Escritura
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="iagro"
+                  checked={docs.saldo_iagro}
+                  onCheckedChange={(v) => handleDocumentCheck('saldo_iagro', v)}
+                  data-testid="doc-iagro"
+                />
+                <Label htmlFor="iagro" className="text-sm cursor-pointer">
+                  Saldo IAGRO
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="car"
+                  checked={docs.car}
+                  onCheckedChange={(v) => handleDocumentCheck('car', v)}
+                  data-testid="doc-car"
+                />
+                <Label htmlFor="car" className="text-sm cursor-pointer">
+                  CAR
+                </Label>
+              </div>
+            </div>
+          </div>
+          
           {hasPending && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
-              Documentos pendentes
+              Documentos pendentes - não é possível avançar para próxima etapa
             </p>
           )}
         </div>
