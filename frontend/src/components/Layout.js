@@ -169,7 +169,7 @@ const NotificationBell = () => {
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const response = await alertsAPI.getAll();
+      const response = await alertsAPI.getPropostas();
       setAlerts(response.data.alerts || []);
     } catch (error) {
       console.error('Erro ao buscar alertas:', error);
@@ -192,8 +192,17 @@ const NotificationBell = () => {
     window.open(`https://wa.me/${formattedPhone}`, '_blank');
   };
 
-  const handleClientClick = (clientId) => {
-    navigate(`/clientes?highlight=${clientId}`);
+  const handleAlertClick = (alert) => {
+    navigate('/propostas');
+  };
+
+  const handleClearAll = async () => {
+    try {
+      await alertsAPI.clearAllPropostaAlerts();
+      fetchAlerts();
+    } catch (error) {
+      console.error('Erro ao limpar alertas:', error);
+    }
   };
 
   return (
@@ -217,9 +226,24 @@ const NotificationBell = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-auto">
-        <DropdownMenuLabel className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-500" />
-          Clientes sem Projeto ({alerts.length})
+        <DropdownMenuLabel className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            Propostas em Aberto ({alerts.length})
+          </span>
+          {alerts.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClearAll();
+              }}
+            >
+              Limpar
+            </Button>
+          )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {loading ? (
@@ -228,19 +252,22 @@ const NotificationBell = () => {
           </div>
         ) : alerts.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground text-sm">
-            Nenhum alerta no momento
+            Nenhuma proposta pendente
           </div>
         ) : (
           alerts.slice(0, 10).map((alert) => (
             <DropdownMenuItem
               key={alert.id}
               className="flex items-start gap-3 p-3 cursor-pointer"
-              onClick={() => handleClientClick(alert.id)}
+              onClick={() => handleAlertClick(alert)}
             >
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{alert.cliente_nome}</p>
                 <p className="text-xs text-muted-foreground">
-                  {alert.dias_sem_projeto} dias sem projeto
+                  {alert.dias_aberta} dias aberta • Alerta {alert.alerta_numero}/3
+                </p>
+                <p className="text-xs text-primary truncate">
+                  {alert.tipo_projeto} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(alert.valor_credito)}
                 </p>
               </div>
               {alert.telefone && (
@@ -263,7 +290,7 @@ const NotificationBell = () => {
           <>
             <DropdownMenuSeparator />
             <div className="p-2 text-center text-xs text-muted-foreground">
-              E mais {alerts.length - 10} clientes...
+              E mais {alerts.length - 10} propostas...
             </div>
           </>
         )}
