@@ -112,6 +112,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/propostas"
+        element={
+          <ProtectedRoute>
+            <Propostas />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/projetos/novo"
         element={
           <ProtectedRoute>
