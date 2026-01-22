@@ -321,31 +321,68 @@ const Propostas = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.nome_completo || !formData.cpf || !formData.telefone || 
-        !formData.tipo_projeto_id || !formData.instituicao_financeira_id || !formData.valor_credito) {
+    // Validação comum
+    if (!formData.tipo_projeto_id || !formData.instituicao_financeira_id || !formData.valor_credito) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     try {
+      let clientId = null;
+
+      if (clientTab === 'existente') {
+        // Usando cliente existente
+        if (!selectedClientId) {
+          toast.error('Selecione um cliente existente');
+          return;
+        }
+        clientId = selectedClientId;
+      } else {
+        // Criando novo cliente
+        if (!formData.nome_completo || !formData.cpf || !formData.telefone) {
+          toast.error('Preencha todos os dados do novo cliente');
+          return;
+        }
+        
+        // Primeiro cria o cliente
+        const clientRes = await clientsAPI.create({
+          nome_completo: formData.nome_completo,
+          cpf: formData.cpf,
+          telefone: formData.telefone,
+        });
+        clientId = clientRes.data.id;
+        toast.success('Cliente cadastrado com sucesso!');
+      }
+
+      // Agora cria a proposta com o client_id
       await propostasAPI.create({
-        ...formData,
+        client_id: clientId,
+        tipo_projeto_id: formData.tipo_projeto_id,
+        instituicao_financeira_id: formData.instituicao_financeira_id,
         valor_credito: parseFloat(formData.valor_credito),
       });
+      
       toast.success('Proposta criada com sucesso!');
-      setShowNewDialog(false);
-      setFormData({
-        nome_completo: '',
-        cpf: '',
-        telefone: '',
-        tipo_projeto_id: '',
-        instituicao_financeira_id: '',
-        valor_credito: '',
-      });
+      handleCloseDialog();
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao criar proposta');
     }
+  };
+
+  const handleCloseDialog = () => {
+    setShowNewDialog(false);
+    setClientTab('existente');
+    setSelectedClientId('');
+    setClientSearchTerm('');
+    setFormData({
+      nome_completo: '',
+      cpf: '',
+      telefone: '',
+      tipo_projeto_id: '',
+      instituicao_financeira_id: '',
+      valor_credito: '',
+    });
   };
 
   const handleConverter = async (proposta) => {
