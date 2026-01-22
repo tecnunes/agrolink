@@ -633,6 +633,8 @@ async def create_client(client_data: ClientCreate, current_user = Depends(get_au
         "data_nascimento": client_data.data_nascimento or "",
         "parceiro_id": client_data.parceiro_id,
         "parceiro_nome": parceiro_nome,
+        "estado": client_data.estado,
+        "cidade": client_data.cidade,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "ultimo_alerta": None,
         "qtd_alertas": 0
@@ -702,7 +704,7 @@ async def update_client(client_id: str, client_data: dict, current_user = Depend
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
     update_data = {}
-    allowed_fields = ["nome_completo", "endereco", "telefone", "data_nascimento", "valor_credito", "parceiro_id"]
+    allowed_fields = ["nome_completo", "endereco", "telefone", "data_nascimento", "valor_credito", "parceiro_id", "estado", "cidade"]
     
     for field in allowed_fields:
         if field in client_data:
