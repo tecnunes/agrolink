@@ -171,7 +171,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Projetos Ativos"
           value={stats?.total_projetos_ativos || 0}
@@ -197,6 +197,13 @@ const Dashboard = () => {
           value={formatCurrency(stats?.valor_total_credito || 0)}
           icon={DollarSign}
           description="Crédito em análise"
+          variant="success"
+        />
+        <StatCard
+          title="Valor Serviço"
+          value={formatCurrency(stats?.valor_total_servico || 0)}
+          icon={Banknote}
+          description="Serviços realizados"
           variant="success"
         />
       </div>
