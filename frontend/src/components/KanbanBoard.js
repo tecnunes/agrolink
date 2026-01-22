@@ -14,6 +14,8 @@ import {
   DollarSign,
   Building2,
   User,
+  FileText,
+  StickyNote,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import ProjectTimeline from './ProjectTimeline';
@@ -22,25 +24,19 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
 };
 
 const KanbanCard = ({ project, onClick, onWhatsApp }) => {
-  const calculateDuration = (dataInicio) => {
-    const start = new Date(dataInicio);
-    const now = new Date();
-    return Math.floor((now - start) / (1000 * 60 * 60 * 24));
-  };
-
-  const getDurationColor = (days) => {
-    if (days <= 7) return 'text-emerald-600 dark:text-emerald-400';
-    if (days <= 14) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
-  const duration = calculateDuration(project.data_inicio);
+  // Get current stage pendencias and observacoes
+  const currentHistorico = project.historico_etapas?.find(
+    h => h.etapa_id === project.etapa_atual_id
+  );
+  const pendencias = currentHistorico?.pendencias?.filter(p => !p.resolvida) || [];
+  const observacoes = currentHistorico?.observacoes || [];
+  const lastObservacao = observacoes.length > 0 ? observacoes[observacoes.length - 1] : null;
 
   return (
     <Card
@@ -52,52 +48,82 @@ const KanbanCard = ({ project, onClick, onWhatsApp }) => {
       data-testid={`kanban-card-${project.id}`}
     >
       <CardContent className="p-3 space-y-2">
-        {/* Header: Nome + Status */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate" title={project.cliente_nome}>
-              {project.cliente_nome}
-            </p>
-          </div>
-          {project.tem_pendencia ? (
-            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-          ) : (
-            <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-          )}
-        </div>
-
-        {/* Valor + Instituição */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <DollarSign className="w-3 h-3" />
-          <span className="font-medium text-foreground">
-            {formatCurrency(project.valor_credito)}
-          </span>
-        </div>
-
-        {project.instituicao_financeira_nome && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Building2 className="w-3 h-3" />
-            <span className="truncate">{project.instituicao_financeira_nome}</span>
-          </div>
-        )}
-
-        {/* Footer: Duração + WhatsApp */}
-        <div className="flex items-center justify-between pt-1 border-t">
-          <div className={cn('flex items-center gap-1 text-xs', getDurationColor(duration))}>
-            <Clock className="w-3 h-3" />
-            <span className="font-medium">{duration}d</span>
-          </div>
+        {/* Tipo do Projeto */}
+        <div className="flex items-center justify-between">
+          <Badge variant="outline" className="text-xs font-semibold bg-primary/10 text-primary border-primary/30">
+            {project.tipo_projeto || 'PRONAF'}
+          </Badge>
           {project.cliente_telefone && (
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6"
+              className="h-6 w-6 -mr-1"
               onClick={(e) => {
                 e.stopPropagation();
                 onWhatsApp(project.cliente_telefone);
               }}
             >
-              <MessageCircle className="w-3 h-3 text-green-600" />
+              <MessageCircle className="w-4 h-4 text-green-600" />
+            </Button>
+          )}
+        </div>
+
+        {/* Nome do Cliente */}
+        <p className="font-semibold text-sm leading-tight" title={project.cliente_nome}>
+          {project.cliente_nome}
+        </p>
+
+        {/* Valor do Crédito */}
+        <p className="text-lg font-bold text-primary">
+          {formatCurrency(project.valor_credito)}
+        </p>
+
+        {/* Pendências (se houver) */}
+        {pendencias.length > 0 && (
+          <div className="p-2 rounded-md bg-red-500/10 border border-red-500/30">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {pendencias.length} Pendência{pendencias.length > 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-red-600/80 dark:text-red-400/80 truncate">
+                  {pendencias[0].descricao}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Última Observação (se houver) */}
+        {lastObservacao && (
+          <div className="p-2 rounded-md bg-amber-500/10 border border-amber-500/30">
+            <div className="flex items-start gap-2">
+              <StickyNote className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                  Última anotação
+                </p>
+                <p className="text-xs text-amber-700/80 dark:text-amber-400/80 truncate">
+                  {lastObservacao.texto}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer: Instituição + Duração */}
+        <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
+          <span className="truncate">{project.instituicao_financeira_nome || 'N/A'}</span>
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            <span>{Math.floor((new Date() - new Date(project.data_inicio)) / (1000 * 60 * 60 * 24))}d</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
             </Button>
           )}
         </div>
