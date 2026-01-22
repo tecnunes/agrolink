@@ -43,9 +43,12 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
   const [cancelMotivo, setCancelMotivo] = useState('');
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [numeroContrato, setNumeroContrato] = useState(project.numero_contrato || '');
+  const [valorServico, setValorServico] = useState(project.valor_servico || '');
 
   const currentEtapaIndex = etapas.findIndex(e => e.id === project.etapa_atual_id);
   const isLastStage = currentEtapaIndex === etapas.length - 1;
+  const currentEtapaNome = project.etapa_atual_nome || '';
 
   const getEtapaStatus = (etapa, index) => {
     if (index < currentEtapaIndex) return 'completed';
@@ -68,6 +71,296 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
     const start = new Date(historico.data_inicio);
     const now = new Date();
     return Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  };
+
+  const handleSaveExtraFields = async () => {
+    try {
+      await projectsAPI.updateDocuments(project.id, {
+        numero_contrato: numeroContrato,
+        valor_servico: valorServico ? parseFloat(valorServico) : null
+      });
+      toast.success('Dados salvos com sucesso');
+      onUpdate();
+    } catch (error) {
+      toast.error('Erro ao salvar dados');
+    }
+  };
+
+  // Render stage-specific checklist
+  const renderStageChecklist = () => {
+    const docs = project.documentos_check || {};
+    
+    // Coleta de Documentos
+    if (currentEtapaNome.includes('Coleta de Documentos')) {
+      const hasPending = !docs.ccu_titulo || !docs.saldo_iagro || !docs.car;
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30">
+          <h4 className="font-medium mb-3">Documentos Obrigatórios</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="ccu"
+                checked={docs.ccu_titulo}
+                onCheckedChange={(v) => handleDocumentCheck('ccu_titulo', v)}
+                data-testid="doc-ccu"
+              />
+              <Label htmlFor="ccu" className="text-sm cursor-pointer">
+                CCU / Título / Contrato / Escritura
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="iagro"
+                checked={docs.saldo_iagro}
+                onCheckedChange={(v) => handleDocumentCheck('saldo_iagro', v)}
+                data-testid="doc-iagro"
+              />
+              <Label htmlFor="iagro" className="text-sm cursor-pointer">
+                Saldo IAGRO
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="car"
+                checked={docs.car}
+                onCheckedChange={(v) => handleDocumentCheck('car', v)}
+                data-testid="doc-car"
+              />
+              <Label htmlFor="car" className="text-sm cursor-pointer">
+                CAR
+              </Label>
+            </div>
+          </div>
+          {hasPending && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Documentos pendentes
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Desenvolvimento do Projeto
+    if (currentEtapaNome.includes('Desenvolvimento do Projeto')) {
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30">
+          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="projeto_implementado"
+              checked={docs.projeto_implementado}
+              onCheckedChange={(v) => handleDocumentCheck('projeto_implementado', v)}
+              data-testid="doc-projeto-implementado"
+            />
+            <Label htmlFor="projeto_implementado" className="text-sm cursor-pointer">
+              Projeto Implementado
+            </Label>
+          </div>
+          {!docs.projeto_implementado && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Pendente: Projeto não implementado
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Coletar Assinaturas
+    if (currentEtapaNome.includes('Coletar Assinaturas')) {
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30">
+          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="projeto_assinado"
+              checked={docs.projeto_assinado}
+              onCheckedChange={(v) => handleDocumentCheck('projeto_assinado', v)}
+              data-testid="doc-projeto-assinado"
+            />
+            <Label htmlFor="projeto_assinado" className="text-sm cursor-pointer">
+              Projeto Assinado
+            </Label>
+          </div>
+          {!docs.projeto_assinado && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Pendente: Projeto não assinado
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Protocolo CENOP
+    if (currentEtapaNome.includes('Protocolo CENOP')) {
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30">
+          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="projeto_protocolado"
+              checked={docs.projeto_protocolado}
+              onCheckedChange={(v) => handleDocumentCheck('projeto_protocolado', v)}
+              data-testid="doc-projeto-protocolado"
+            />
+            <Label htmlFor="projeto_protocolado" className="text-sm cursor-pointer">
+              Projeto Protocolado
+            </Label>
+          </div>
+          {!docs.projeto_protocolado && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Pendente: Projeto não protocolado
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Instrumento de Crédito
+    if (currentEtapaNome.includes('Instrumento de Crédito')) {
+      const hasPending = !docs.assinatura_agencia || !docs.upload_contrato;
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+          <h4 className="font-medium">Requisitos da Etapa</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="assinatura_agencia"
+                checked={docs.assinatura_agencia}
+                onCheckedChange={(v) => handleDocumentCheck('assinatura_agencia', v)}
+                data-testid="doc-assinatura-agencia"
+              />
+              <Label htmlFor="assinatura_agencia" className="text-sm cursor-pointer">
+                Assinatura na Agência
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="upload_contrato"
+                checked={docs.upload_contrato}
+                onCheckedChange={(v) => handleDocumentCheck('upload_contrato', v)}
+                data-testid="doc-upload-contrato"
+              />
+              <Label htmlFor="upload_contrato" className="text-sm cursor-pointer">
+                Upload Contrato
+              </Label>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="numero_contrato">Número do Contrato</Label>
+            <div className="flex gap-2">
+              <Input
+                id="numero_contrato"
+                placeholder="Digite o número do contrato"
+                value={numeroContrato}
+                onChange={(e) => setNumeroContrato(e.target.value)}
+                data-testid="input-numero-contrato"
+                className="flex-1"
+              />
+              <Button onClick={handleSaveExtraFields} size="sm" data-testid="save-contrato-btn">
+                Salvar
+              </Button>
+            </div>
+          </div>
+          {hasPending && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Pendente: Requisitos não completados
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // GTA e Nota Fiscal
+    if (currentEtapaNome.includes('GTA e Nota Fiscal')) {
+      const hasPending = !docs.gta_emitido || !docs.nota_fiscal_emitida;
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30">
+          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="gta_emitido"
+                checked={docs.gta_emitido}
+                onCheckedChange={(v) => handleDocumentCheck('gta_emitido', v)}
+                data-testid="doc-gta-emitido"
+              />
+              <Label htmlFor="gta_emitido" className="text-sm cursor-pointer">
+                GTA Emitido
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="nota_fiscal_emitida"
+                checked={docs.nota_fiscal_emitida}
+                onCheckedChange={(v) => handleDocumentCheck('nota_fiscal_emitida', v)}
+                data-testid="doc-nota-fiscal-emitida"
+              />
+              <Label htmlFor="nota_fiscal_emitida" className="text-sm cursor-pointer">
+                Nota Fiscal Emitida
+              </Label>
+            </div>
+          </div>
+          {hasPending && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Pendente: Requisitos não completados
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Projeto Creditado
+    if (currentEtapaNome.includes('Projeto Creditado')) {
+      return (
+        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+          <h4 className="font-medium">Requisitos da Etapa</h4>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="comprovante_servico_pago"
+              checked={docs.comprovante_servico_pago}
+              onCheckedChange={(v) => handleDocumentCheck('comprovante_servico_pago', v)}
+              data-testid="doc-comprovante-servico"
+            />
+            <Label htmlFor="comprovante_servico_pago" className="text-sm cursor-pointer">
+              Comprovante de Serviço Pago
+            </Label>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="valor_servico">Valor do Serviço (R$)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="valor_servico"
+                type="number"
+                step="0.01"
+                placeholder="0,00"
+                value={valorServico}
+                onChange={(e) => setValorServico(e.target.value)}
+                data-testid="input-valor-servico"
+                className="flex-1"
+              />
+              <Button onClick={handleSaveExtraFields} size="sm" data-testid="save-servico-btn">
+                Salvar
+              </Button>
+            </div>
+          </div>
+          {!docs.comprovante_servico_pago && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Pendente: Comprovante não enviado
+            </p>
+          )}
+        </div>
+      );
+    }
+    
+    // Cadastro ou outras etapas sem checklist específico
+    return null;
   };
 
   const handleNextStage = async () => {
