@@ -1885,49 +1885,68 @@ async def delete_requisito_etapa(requisito_id: str, current_user = Depends(get_a
 
 @api_router.post("/propostas", response_model=PropostaResponse)
 async def create_proposta(data: PropostaCreate, current_user = Depends(get_auth_user)):
-    # Validate CPF
-    cpf_clean = re.sub(r'\D', '', data.cpf)
-    if len(cpf_clean) != 11:
-        raise HTTPException(status_code=400, detail="CPF inválido")
-    
-    # Check if client already exists
-    existing_client = await db.clients.find_one({"cpf": cpf_clean}, {"_id": 0})
-    
     now = datetime.now(timezone.utc).isoformat()
     
-    if existing_client:
-        client_id = existing_client["id"]
-        # Update client info if needed
-        await db.clients.update_one(
-            {"id": client_id},
-            {"$set": {
-                "nome_completo": data.nome_completo.upper(),
-                "telefone": data.telefone
-            }}
-        )
+    # Determinar o cliente (existente ou novo)
+    if data.client_id:
+        # Usar cliente existente
+        existing_client = await db.clients.find_one({"id": data.client_id}, {"_id": 0})
+        if not existing_client:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        client_id = data.client_id
+        client_nome = existing_client["nome_completo"]
+        client_cpf = existing_client["cpf"]
+        client_telefone = existing_client.get("telefone", "")
     else:
-        # Create new client
-        client_id = str(uuid.uuid4())
-        new_client = {
-            "id": client_id,
-            "nome_completo": data.nome_completo.upper(),
-            "cpf": cpf_clean,
-            "telefone": data.telefone,
-            "endereco": "",
-            "data_nascimento": "",
-            "parceiro_id": None,
-            "parceiro_nome": None,
-            "estado": None,
-            "cidade": None,
-            "created_at": now,
-            "ultimo_alerta": None,
-            "qtd_alertas": 0
-        }
-        await db.clients.insert_one(new_client)
+        # Criar novo cliente ou atualizar existente pelo CPF
+        if not data.nome_completo or not data.cpf or not data.telefone:
+            raise HTTPException(status_code=400, detail="Para criar um novo cliente, informe nome, CPF e telefone")
         
-        # Create client folder
-        client_folder = UPLOAD_DIR / client_id
-        client_folder.mkdir(exist_ok=True)
+        # Validate CPF
+        cpf_clean = re.sub(r'\D', '', data.cpf)
+        if len(cpf_clean) != 11:
+            raise HTTPException(status_code=400, detail="CPF inválido")
+        
+        # Check if client already exists
+        existing_client = await db.clients.find_one({"cpf": cpf_clean}, {"_id": 0})
+        
+        if existing_client:
+            client_id = existing_client["id"]
+            # Update client info if needed
+            await db.clients.update_one(
+                {"id": client_id},
+                {"$set": {
+                    "nome_completo": data.nome_completo.upper(),
+                    "telefone": data.telefone
+                }}
+            )
+        else:
+            # Create new client
+            client_id = str(uuid.uuid4())
+            new_client = {
+                "id": client_id,
+                "nome_completo": data.nome_completo.upper(),
+                "cpf": cpf_clean,
+                "telefone": data.telefone,
+                "endereco": "",
+                "data_nascimento": "",
+                "parceiro_id": None,
+                "parceiro_nome": None,
+                "estado": None,
+                "cidade": None,
+                "created_at": now,
+                "ultimo_alerta": None,
+                "qtd_alertas": 0
+            }
+            await db.clients.insert_one(new_client)
+            
+            # Create client folder
+            client_folder = UPLOAD_DIR / client_id
+            client_folder.mkdir(exist_ok=True)
+        
+        client_nome = data.nome_completo.upper()
+        client_cpf = cpf_clean
+        client_telefone = data.telefone
     
     # Get tipo projeto and instituicao names
     tipo_projeto = await db.tipos_projeto.find_one({"id": data.tipo_projeto_id}, {"_id": 0})
@@ -1959,9 +1978,9 @@ async def create_proposta(data: PropostaCreate, current_user = Depends(get_auth_
     
     return PropostaResponse(
         **new_proposta,
-        cliente_nome=data.nome_completo.upper(),
-        cliente_cpf=cpf_clean,
-        cliente_telefone=data.telefone,
+        cliente_nome=client_nome,
+        cliente_cpf=client_cpf,
+        cliente_telefone=client_telefone,
         dias_aberta=0
     )
 
