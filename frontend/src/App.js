@@ -9,13 +9,16 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ClientForm from './pages/ClientForm';
 import ClientList from './pages/ClientList';
+import Propostas from './pages/Propostas';
 import NewProject from './pages/NewProject';
+import ProjectDetails from './pages/ProjectDetails';
 import ArchivedProjects from './pages/ArchivedProjects';
 import Reports from './pages/Reports';
 import Partners from './pages/admin/Partners';
 import UsersPage from './pages/admin/Users';
 import Etapas from './pages/admin/Etapas';
 import ConfigPage from './pages/admin/Config';
+import Configuracoes from './pages/admin/Configuracoes';
 
 // Components
 import Layout from './components/Layout';
