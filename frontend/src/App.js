@@ -169,6 +169,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/configuracoes"
+        element={
+          <ProtectedRoute adminOnly>
+            <Configuracoes />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
