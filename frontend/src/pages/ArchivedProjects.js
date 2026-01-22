@@ -3,12 +3,11 @@ import { projectsAPI, etapasAPI } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../components/ui/collapsible';
 import { Skeleton } from '../components/ui/skeleton';
 import { toast } from 'sonner';
-import { Archive, ChevronDown, ChevronRight, Clock, CheckCircle } from 'lucide-react';
+import { Archive, ChevronDown, ChevronRight, Clock, CheckCircle, MessageCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
-import ProjectTimeline from '../components/ProjectTimeline';
+import { Button } from '../components/ui/button';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -54,6 +53,13 @@ const ArchivedProjects = () => {
     return Math.floor((end - start) / (1000 * 60 * 60 * 24));
   };
 
+  const openWhatsApp = (telefone) => {
+    if (!telefone) return;
+    const phone = telefone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+    window.open(`https://wa.me/${formattedPhone}`, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -74,7 +80,7 @@ const ArchivedProjects = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Archive className="w-5 h-5" />
-            Projetos Arquivados
+            Projetos Arquivados ({projects.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -85,77 +91,108 @@ const ArchivedProjects = () => {
                   <TableHead className="w-10"></TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead className="hidden sm:table-cell">CPF</TableHead>
+                  <TableHead className="hidden md:table-cell">Tipo</TableHead>
                   <TableHead className="hidden md:table-cell">Valor Crédito</TableHead>
                   <TableHead className="hidden lg:table-cell">Início</TableHead>
                   <TableHead className="hidden lg:table-cell">Arquivamento</TableHead>
-                  <TableHead className="hidden xl:table-cell">Duração Total</TableHead>
-                  <TableHead className="w-20">Status</TableHead>
+                  <TableHead className="hidden xl:table-cell">Duração</TableHead>
+                  <TableHead className="w-28">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {projects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhum projeto arquivado
                     </TableCell>
                   </TableRow>
                 ) : (
                   projects.map((project) => (
-                    <Collapsible
-                      key={project.id}
-                      open={expandedProject === project.id}
-                      onOpenChange={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <TableRow
-                          className={cn(
-                            'cursor-pointer transition-colors',
-                            expandedProject === project.id && 'bg-muted/50'
+                    <React.Fragment key={project.id}>
+                      <TableRow
+                        className={cn(
+                          'cursor-pointer transition-colors hover:bg-muted/50',
+                          expandedProject === project.id && 'bg-muted/50'
+                        )}
+                        onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}
+                        data-testid={`archived-project-row-${project.id}`}
+                      >
+                        <TableCell>
+                          {expandedProject === project.id ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
                           )}
-                          data-testid={`archived-project-row-${project.id}`}
-                        >
-                          <TableCell>
-                            {expandedProject === project.id ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">{project.cliente_nome}</TableCell>
-                          <TableCell className="hidden sm:table-cell mono text-sm">
-                            {formatCPF(project.cliente_cpf)}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {formatCurrency(project.valor_credito)}
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">
-                            {new Date(project.data_inicio).toLocaleDateString('pt-BR')}
-                          </TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">
-                            {project.data_arquivamento 
-                              ? new Date(project.data_arquivamento).toLocaleDateString('pt-BR')
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell className="hidden xl:table-cell">
-                            <div className="flex items-center gap-1 text-sm">
-                              <Clock className="w-3 h-3" />
-                              {calculateTotalDuration(project)} dias
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                        </TableCell>
+                        <TableCell className="font-medium">{project.cliente_nome}</TableCell>
+                        <TableCell className="hidden sm:table-cell mono text-sm">
+                          {formatCPF(project.cliente_cpf)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge variant="outline">{project.tipo_projeto || 'N/A'}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {formatCurrency(project.valor_credito || 0)}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">
+                          {new Date(project.data_inicio).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm">
+                          {project.data_arquivamento 
+                            ? new Date(project.data_arquivamento).toLocaleDateString('pt-BR')
+                            : '-'
+                          }
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+                            <Clock className="w-3 h-3" />
+                            {calculateTotalDuration(project)} dias
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 whitespace-nowrap">
                               <CheckCircle className="w-3 h-3" />
                               Concluído
                             </Badge>
-                          </TableCell>
-                        </TableRow>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
+                            {project.cliente_telefone && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openWhatsApp(project.cliente_telefone);
+                                }}
+                                className="h-8 w-8"
+                              >
+                                <MessageCircle className="w-4 h-4 text-green-600" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {expandedProject === project.id && (
                         <TableRow>
-                          <TableCell colSpan={8} className="p-0 bg-muted/30">
+                          <TableCell colSpan={9} className="p-0 bg-muted/30">
                             <div className="p-6">
+                              {/* Project details */}
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                {project.numero_contrato && (
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">Nº Contrato</p>
+                                    <p className="font-medium">{project.numero_contrato}</p>
+                                  </div>
+                                )}
+                                {project.valor_servico && (
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">Valor Serviço</p>
+                                    <p className="font-medium">{formatCurrency(project.valor_servico)}</p>
+                                  </div>
+                                )}
+                              </div>
+                              
                               {/* Timeline readonly view */}
+                              <h4 className="font-medium mb-4">Histórico de Etapas</h4>
                               <div className="relative">
                                 <div className="flex items-center justify-between overflow-x-auto pb-4">
                                   {etapas.map((etapa, index) => {
@@ -189,8 +226,8 @@ const ArchivedProjects = () => {
                             </div>
                           </TableCell>
                         </TableRow>
-                      </CollapsibleContent>
-                    </Collapsible>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </TableBody>
