@@ -85,10 +85,11 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     nome: str
-    email: str
+    login: Optional[str] = None
+    email: Optional[str] = None
     role: str
     ativo: bool
-    created_at: str
+    created_at: Optional[str] = None
 
 class TokenResponse(BaseModel):
     token: str
