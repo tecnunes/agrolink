@@ -514,7 +514,14 @@ async def list_users(current_user = Depends(get_auth_user)):
         raise HTTPException(status_code=403, detail="Permissão negada")
     
     users = await db.users.find({}, {"_id": 0, "senha": 0}).to_list(1000)
-    return [UserResponse(**u) for u in users]
+    result = []
+    for u in users:
+        # Garantir campos obrigatórios
+        u["email"] = u.get("email", u.get("login", ""))
+        u["login"] = u.get("login", u.get("email", ""))
+        u["created_at"] = u.get("created_at", "")
+        result.append(UserResponse(**u))
+    return result
 
 @api_router.put("/users/{user_id}")
 async def update_user(user_id: str, user_data: dict, current_user = Depends(get_auth_user)):
