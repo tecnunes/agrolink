@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { etapasAPI } from '../../lib/api';
+import { etapasAPI, tiposProjetoAPI } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../../components/ui/alert-dialog';
@@ -18,25 +19,31 @@ const Etapas = () => {
   const { isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [etapas, setEtapas] = useState([]);
+  const [tiposProjeto, setTiposProjeto] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEtapa, setEditingEtapa] = useState(null);
   const [formData, setFormData] = useState({
     nome: '',
     ordem: 1,
     ativo: true,
+    tipos_projeto_ids: [],
   });
 
   useEffect(() => {
-    loadEtapas();
+    loadData();
   }, []);
 
-  const loadEtapas = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const response = await etapasAPI.list();
-      setEtapas(response.data);
+      const [etapasRes, tiposRes] = await Promise.all([
+        etapasAPI.list(),
+        tiposProjetoAPI.list(),
+      ]);
+      setEtapas(etapasRes.data);
+      setTiposProjeto(tiposRes.data.filter(t => t.ativo));
     } catch (error) {
-      toast.error('Erro ao carregar etapas');
+      toast.error('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
@@ -49,6 +56,7 @@ const Etapas = () => {
         nome: etapa.nome,
         ordem: etapa.ordem,
         ativo: etapa.ativo,
+        tipos_projeto_ids: etapa.tipos_projeto_ids || [],
       });
     } else {
       setEditingEtapa(null);
@@ -57,9 +65,21 @@ const Etapas = () => {
         nome: '',
         ordem: maxOrdem + 1,
         ativo: true,
+        tipos_projeto_ids: [],
       });
     }
     setDialogOpen(true);
+  };
+
+  const handleTipoProjetoToggle = (tipoId) => {
+    setFormData(prev => {
+      const tipos = prev.tipos_projeto_ids || [];
+      if (tipos.includes(tipoId)) {
+        return { ...prev, tipos_projeto_ids: tipos.filter(id => id !== tipoId) };
+      } else {
+        return { ...prev, tipos_projeto_ids: [...tipos, tipoId] };
+      }
+    });
   };
 
   const handleSubmit = async () => {
@@ -77,7 +97,7 @@ const Etapas = () => {
         toast.success('Etapa cadastrada');
       }
       setDialogOpen(false);
-      loadEtapas();
+      loadData();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao salvar etapa');
     }
@@ -87,7 +107,7 @@ const Etapas = () => {
     try {
       await etapasAPI.delete(id);
       toast.success('Etapa desativada');
-      loadEtapas();
+      loadData();
     } catch (error) {
       toast.error('Erro ao desativar etapa');
     }
@@ -106,7 +126,7 @@ const Etapas = () => {
         etapasAPI.update(etapa.id, { ordem: otherEtapa.ordem }),
         etapasAPI.update(otherEtapa.id, { ordem: etapa.ordem }),
       ]);
-      loadEtapas();
+      loadData();
     } catch (error) {
       toast.error('Erro ao reordenar etapas');
     }
@@ -140,7 +160,7 @@ const Etapas = () => {
             Fluxo de Etapas
           </CardTitle>
           <CardDescription>
-            As etapas são executadas na ordem definida abaixo
+            As etapas são executadas na ordem definida abaixo. Vincule a tipos de projeto específicos ou deixe em branco para todos.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -151,78 +171,182 @@ const Etapas = () => {
               ))}
             </div>
           ) : (
-            <div className="rounded-lg border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="w-20">Ordem</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-32">Reordenar</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {etapas.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        Nenhuma etapa cadastrada
-                      </TableCell>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block rounded-lg border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-20">Ordem</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipos de Projeto</TableHead>
+                      <TableHead className="w-32">Reordenar</TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    etapas.map((etapa, index) => (
-                      <TableRow key={etapa.id} data-testid={`etapa-row-${etapa.id}`}>
-                        <TableCell>
-                          <Badge variant="outline" className="font-mono">
-                            {etapa.ordem}
-                          </Badge>
+                  </TableHeader>
+                  <TableBody>
+                    {etapas.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Nenhuma etapa cadastrada
                         </TableCell>
-                        <TableCell className="font-medium">{etapa.nome}</TableCell>
-                        <TableCell>
+                      </TableRow>
+                    ) : (
+                      etapas.map((etapa, index) => {
+                        const tiposNomes = (etapa.tipos_projeto_ids || [])
+                          .map(id => tiposProjeto.find(t => t.id === id)?.nome)
+                          .filter(Boolean);
+                        return (
+                        <TableRow key={etapa.id} data-testid={`etapa-row-${etapa.id}`}>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono">
+                              {etapa.ordem}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium">{etapa.nome}</span>
+                            {!etapa.ativo && <Badge variant="secondary" className="ml-2 text-xs">Inativa</Badge>}
+                          </TableCell>
+                          <TableCell>
+                            {tiposNomes.length === 0 ? (
+                              <span className="text-sm text-muted-foreground">Todos</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1">
+                                {tiposNomes.map((nome, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">{nome}</Badge>
+                                ))}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleReorder(etapa, 'up')}
+                                disabled={index === 0}
+                                data-testid={`etapa-up-${etapa.id}`}
+                              >
+                                <ArrowUp className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleReorder(etapa, 'down')}
+                                disabled={index === etapas.length - 1}
+                                data-testid={`etapa-down-${etapa.id}`}
+                              >
+                                <ArrowDown className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleOpenDialog(etapa)}
+                                data-testid={`edit-etapa-${etapa.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="text-destructive"
+                                    data-testid={`delete-etapa-${etapa.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Desativar Etapa</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja desativar a etapa "{etapa.nome}"?
+                                      Projetos existentes não serão afetados.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(etapa.id)}>
+                                      Desativar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {etapas.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhuma etapa cadastrada
+                  </div>
+                ) : (
+                  etapas.map((etapa, index) => {
+                    const tiposNomes = (etapa.tipos_projeto_ids || [])
+                      .map(id => tiposProjeto.find(t => t.id === id)?.nome)
+                      .filter(Boolean);
+                    return (
+                      <div 
+                        key={etapa.id} 
+                        className="p-4 border rounded-lg bg-card"
+                        data-testid={`etapa-mobile-${etapa.id}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="font-mono">{etapa.ordem}</Badge>
+                            <span className="font-medium">{etapa.nome}</span>
+                          </div>
                           <Badge variant={etapa.ativo ? 'default' : 'secondary'}>
                             {etapa.ativo ? 'Ativa' : 'Inativa'}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
+                        </div>
+                        <div className="mb-3 text-sm text-muted-foreground">
+                          Tipos: {tiposNomes.length === 0 ? 'Todos' : tiposNomes.join(', ')}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex gap-1">
                             <Button
-                              size="icon"
-                              variant="ghost"
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleReorder(etapa, 'up')}
                               disabled={index === 0}
-                              data-testid={`etapa-up-${etapa.id}`}
                             >
                               <ArrowUp className="w-4 h-4" />
                             </Button>
                             <Button
-                              size="icon"
-                              variant="ghost"
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleReorder(etapa, 'down')}
                               disabled={index === etapas.length - 1}
-                              data-testid={`etapa-down-${etapa.id}`}
                             >
                               <ArrowDown className="w-4 h-4" />
                             </Button>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className="flex gap-2">
                             <Button
-                              size="icon"
-                              variant="ghost"
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleOpenDialog(etapa)}
-                              data-testid={`edit-etapa-${etapa.id}`}
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="text-destructive"
-                                  data-testid={`delete-etapa-${etapa.id}`}
-                                >
+                                <Button size="sm" variant="outline" className="text-destructive">
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -230,8 +354,7 @@ const Etapas = () => {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Desativar Etapa</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Tem certeza que deseja desativar a etapa "{etapa.nome}"?
-                                    Projetos existentes não serão afetados.
+                                    Tem certeza que deseja desativar "{etapa.nome}"?
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -243,13 +366,13 @@ const Etapas = () => {
                               </AlertDialogContent>
                             </AlertDialog>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -293,6 +416,38 @@ const Etapas = () => {
                 data-testid="etapa-ativo-switch"
               />
               <Label htmlFor="ativo">Etapa ativa</Label>
+            </div>
+            
+            {/* Tipos de Projeto Selection */}
+            <div className="space-y-2">
+              <Label>Tipos de Projeto</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Selecione os tipos de projeto para os quais esta etapa se aplica. Deixe vazio para aplicar a todos.
+              </p>
+              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                {tiposProjeto.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum tipo de projeto cadastrado</p>
+                ) : (
+                  tiposProjeto.map((tipo) => (
+                    <div key={tipo.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`tipo-${tipo.id}`}
+                        checked={(formData.tipos_projeto_ids || []).includes(tipo.id)}
+                        onCheckedChange={() => handleTipoProjetoToggle(tipo.id)}
+                        data-testid={`tipo-projeto-check-${tipo.id}`}
+                      />
+                      <Label htmlFor={`tipo-${tipo.id}`} className="text-sm font-normal cursor-pointer">
+                        {tipo.nome}
+                      </Label>
+                    </div>
+                  ))
+                )}
+              </div>
+              {formData.tipos_projeto_ids?.length > 0 && (
+                <p className="text-xs text-blue-600">
+                  Selecionados: {formData.tipos_projeto_ids.length} tipo(s)
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>

@@ -41,6 +41,8 @@ const NewProject = () => {
   const [valorCredito, setValorCredito] = useState('');
   const [tipoProjetoId, setTipoProjetoId] = useState('');
   const [instituicaoId, setInstituicaoId] = useState('');
+  const [agencia, setAgencia] = useState('');
+  const [conta, setConta] = useState('');
 
   useEffect(() => {
     loadInitialData();
@@ -89,6 +91,8 @@ const NewProject = () => {
     setValorCredito('');
     setTipoProjetoId('');
     setInstituicaoId('');
+    setAgencia('');
+    setConta('');
   };
 
   const handleCreateProject = async () => {
@@ -118,6 +122,8 @@ const NewProject = () => {
         tipo_projeto: tipoSelecionado?.nome || 'PRONAF A',
         tipo_projeto_id: tipoProjetoId,
         instituicao_financeira_id: instituicaoId,
+        agencia: agencia || null,
+        conta: conta || null,
       });
       toast.success('Projeto iniciado com sucesso!');
       navigate('/');
@@ -295,6 +301,29 @@ const NewProject = () => {
                   onChange={(e) => setValorCredito(e.target.value)}
                   data-testid="input-valor-credito"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="agencia">Agência</Label>
+                  <Input
+                    id="agencia"
+                    placeholder="0000"
+                    value={agencia}
+                    onChange={(e) => setAgencia(e.target.value)}
+                    data-testid="input-agencia"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="conta">Conta</Label>
+                  <Input
+                    id="conta"
+                    placeholder="00000-0"
+                    value={conta}
+                    onChange={(e) => setConta(e.target.value)}
+                    data-testid="input-conta"
+                  />
+                </div>
               </div>
             </div>
           )}

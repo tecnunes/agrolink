@@ -190,20 +190,25 @@ const Configuracoes = () => {
       </div>
 
       <Tabs defaultValue="instituicoes" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="instituicoes" className="gap-2">
-            <Building2 className="w-4 h-4" />
-            Instituições
-          </TabsTrigger>
-          <TabsTrigger value="tipos" className="gap-2">
-            <FolderKanban className="w-4 h-4" />
-            Tipos de Projeto
-          </TabsTrigger>
-          <TabsTrigger value="requisitos" className="gap-2">
-            <CheckSquare className="w-4 h-4" />
-            Requisitos
-          </TabsTrigger>
-        </TabsList>
+        <div className="responsive-tabs">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="instituicoes" className="gap-2 flex-1 sm:flex-none">
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Instituições</span>
+              <span className="sm:hidden">Inst.</span>
+            </TabsTrigger>
+            <TabsTrigger value="tipos" className="gap-2 flex-1 sm:flex-none">
+              <FolderKanban className="w-4 h-4" />
+              <span className="hidden sm:inline">Tipos de Projeto</span>
+              <span className="sm:hidden">Tipos</span>
+            </TabsTrigger>
+            <TabsTrigger value="requisitos" className="gap-2 flex-1 sm:flex-none">
+              <CheckSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Requisitos</span>
+              <span className="sm:hidden">Req.</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Instituições Financeiras */}
         <TabsContent value="instituicoes">
@@ -259,49 +264,89 @@ const Configuracoes = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {instituicoes.map((inst) => (
-                    <TableRow key={inst.id}>
-                      <TableCell className="font-medium">{inst.nome}</TableCell>
-                      <TableCell>
-                        <Badge variant={inst.ativo ? 'default' : 'secondary'}>
-                          {inst.ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingInstituicao(inst);
-                              setInstituicaoForm({ nome: inst.nome, ativo: inst.ativo });
-                              setShowInstituicaoDialog(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDeleteInstituicao(inst.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {instituicoes.map((inst) => (
+                      <TableRow key={inst.id}>
+                        <TableCell className="font-medium">{inst.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant={inst.ativo ? 'default' : 'secondary'}>
+                            {inst.ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingInstituicao(inst);
+                                setInstituicaoForm({ nome: inst.nome, ativo: inst.ativo });
+                                setShowInstituicaoDialog(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteInstituicao(inst.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {instituicoes.map((inst) => (
+                  <div key={inst.id} className="p-4 border rounded-lg bg-background">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{inst.nome}</span>
+                      <Badge variant={inst.ativo ? 'default' : 'secondary'}>
+                        {inst.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setEditingInstituicao(inst);
+                          setInstituicaoForm({ nome: inst.nome, ativo: inst.ativo });
+                          setShowInstituicaoDialog(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive"
+                        onClick={() => handleDeleteInstituicao(inst.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -360,49 +405,89 @@ const Configuracoes = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tiposProjeto.map((tipo) => (
-                    <TableRow key={tipo.id}>
-                      <TableCell className="font-medium">{tipo.nome}</TableCell>
-                      <TableCell>
-                        <Badge variant={tipo.ativo ? 'default' : 'secondary'}>
-                          {tipo.ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setEditingTipo(tipo);
-                              setTipoForm({ nome: tipo.nome, ativo: tipo.ativo });
-                              setShowTipoDialog(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDeleteTipo(tipo.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {tiposProjeto.map((tipo) => (
+                      <TableRow key={tipo.id}>
+                        <TableCell className="font-medium">{tipo.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant={tipo.ativo ? 'default' : 'secondary'}>
+                            {tipo.ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingTipo(tipo);
+                                setTipoForm({ nome: tipo.nome, ativo: tipo.ativo });
+                                setShowTipoDialog(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteTipo(tipo.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {tiposProjeto.map((tipo) => (
+                  <div key={tipo.id} className="p-4 border rounded-lg bg-background">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{tipo.nome}</span>
+                      <Badge variant={tipo.ativo ? 'default' : 'secondary'}>
+                        {tipo.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          setEditingTipo(tipo);
+                          setTipoForm({ nome: tipo.nome, ativo: tipo.ativo });
+                          setShowTipoDialog(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive"
+                        onClick={() => handleDeleteTipo(tipo.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -485,69 +570,127 @@ const Configuracoes = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Etapa</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Campo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-24">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {requisitos.length === 0 ? (
+              {/* Desktop Table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        Nenhum requisito personalizado cadastrado
-                      </TableCell>
+                      <TableHead>Etapa</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Campo</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-24">Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    requisitos.map((req) => {
-                      const etapa = etapas.find(e => e.id === req.etapa_id);
-                      return (
-                        <TableRow key={req.id}>
-                          <TableCell>{etapa?.nome || 'N/A'}</TableCell>
-                          <TableCell className="font-medium">{req.nome}</TableCell>
-                          <TableCell className="mono text-sm">{req.campo}</TableCell>
-                          <TableCell>
-                            <Badge variant={req.ativo ? 'default' : 'secondary'}>
-                              {req.ativo ? 'Ativo' : 'Inativo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingRequisito(req);
-                                  setRequisitoForm({
-                                    etapa_id: req.etapa_id,
-                                    nome: req.nome,
-                                    campo: req.campo,
-                                    ativo: req.ativo
-                                  });
-                                  setShowRequisitoDialog(true);
-                                }}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => handleDeleteRequisito(req.id)}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {requisitos.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Nenhum requisito personalizado cadastrado
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      requisitos.map((req) => {
+                        const etapa = etapas.find(e => e.id === req.etapa_id);
+                        return (
+                          <TableRow key={req.id}>
+                            <TableCell>{etapa?.nome || 'N/A'}</TableCell>
+                            <TableCell className="font-medium">{req.nome}</TableCell>
+                            <TableCell className="mono text-sm">{req.campo}</TableCell>
+                            <TableCell>
+                              <Badge variant={req.ativo ? 'default' : 'secondary'}>
+                                {req.ativo ? 'Ativo' : 'Inativo'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditingRequisito(req);
+                                    setRequisitoForm({
+                                      etapa_id: req.etapa_id,
+                                      nome: req.nome,
+                                      campo: req.campo,
+                                      ativo: req.ativo
+                                    });
+                                    setShowRequisitoDialog(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => handleDeleteRequisito(req.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Mobile Cards */}
+              <div className="md:hidden space-y-3">
+                {requisitos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum requisito personalizado cadastrado
+                  </div>
+                ) : (
+                  requisitos.map((req) => {
+                    const etapa = etapas.find(e => e.id === req.etapa_id);
+                    return (
+                      <div key={req.id} className="p-4 border rounded-lg bg-background">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <span className="font-medium">{req.nome}</span>
+                            <p className="text-sm text-muted-foreground">{etapa?.nome || 'N/A'}</p>
+                          </div>
+                          <Badge variant={req.ativo ? 'default' : 'secondary'}>
+                            {req.ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+                        <code className="text-xs bg-muted px-2 py-1 rounded mb-3 inline-block">{req.campo}</code>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              setEditingRequisito(req);
+                              setRequisitoForm({
+                                etapa_id: req.etapa_id,
+                                nome: req.nome,
+                                campo: req.campo,
+                                ativo: req.ativo
+                              });
+                              setShowRequisitoDialog(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive"
+                            onClick={() => handleDeleteRequisito(req.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

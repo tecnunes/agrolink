@@ -60,6 +60,7 @@ export const clientsAPI = {
 // Etapas
 export const etapasAPI = {
   list: () => api.get('/etapas'),
+  listByTipoProjeto: (tipoProjetoId) => api.get(`/etapas/por-projeto/${tipoProjetoId}`),
   create: (data) => api.post('/etapas', data),
   update: (id, data) => api.put(`/etapas/${id}`, data),
   delete: (id) => api.delete(`/etapas/${id}`),
@@ -70,6 +71,7 @@ export const projectsAPI = {
   list: (params) => api.get('/projects', { params }),
   get: (id) => api.get(`/projects/${id}`),
   create: (data) => api.post('/projects', data),
+  listByClient: (clientId) => api.get(`/projects/by-client/${clientId}`),
   nextStage: (id) => api.put(`/projects/${id}/next-stage`),
   advanceStage: (id) => api.put(`/projects/${id}/next-stage`),
   archive: (id) => api.put(`/projects/${id}/archive`),
@@ -134,9 +136,11 @@ export const tiposProjetoAPI = {
 // Requisitos de Etapa
 export const requisitosEtapaAPI = {
   list: (etapaId) => api.get('/requisitos-etapa', { params: { etapa_id: etapaId } }),
+  listByTipoProjeto: (tipoProjetoId, etapaId) => api.get(`/requisitos-etapa/por-projeto/${tipoProjetoId}`, { params: { etapa_id: etapaId } }),
   create: (data) => api.post('/requisitos-etapa', data),
   update: (id, data) => api.put(`/requisitos-etapa/${id}`, data),
   delete: (id) => api.delete(`/requisitos-etapa/${id}`),
+  seedDefaults: () => api.post('/requisitos-etapa/seed-defaults'),
 };
 
 // Estados e Cidades

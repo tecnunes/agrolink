@@ -117,6 +117,8 @@ class ClientBase(BaseModel):
     parceiro_id: Optional[str] = None
     estado: Optional[str] = None
     cidade: Optional[str] = None
+    usuario_gov: Optional[str] = None
+    senha_gov: Optional[str] = None
 
 class ClientCreate(ClientBase):
     pass
@@ -166,6 +168,8 @@ class PropostaBase(BaseModel):
     valor_credito: float
     status: str = "aberta"  # aberta, convertida, desistida
     motivo_desistencia: Optional[str] = None
+    agencia: Optional[str] = None
+    conta: Optional[str] = None
 
 class PropostaCreate(BaseModel):
     # Se client_id for fornecido, usa o cliente existente
@@ -178,6 +182,9 @@ class PropostaCreate(BaseModel):
     tipo_projeto_id: str
     instituicao_financeira_id: str
     valor_credito: float
+    # Campos opcionais bancários
+    agencia: Optional[str] = None
+    conta: Optional[str] = None
 
 class PropostaResponse(PropostaBase):
     model_config = ConfigDict(extra="ignore")
@@ -192,6 +199,8 @@ class PropostaResponse(PropostaBase):
     qtd_alertas: int = 0
     ultimo_alerta: Optional[str] = None
     dias_aberta: int = 0
+    agencia: Optional[str] = None
+    conta: Optional[str] = None
 
 # ==================== REQUISITO ETAPA MODELS ====================
 
@@ -200,6 +209,7 @@ class RequisitoEtapaBase(BaseModel):
     nome: str
     campo: str  # nome do campo no documentos_check
     ativo: bool = True
+    tipos_projeto_ids: Optional[List[str]] = []  # Lista de IDs dos tipos de projeto (vazio = todos)
 
 class RequisitoEtapaCreate(RequisitoEtapaBase):
     pass
@@ -207,12 +217,14 @@ class RequisitoEtapaCreate(RequisitoEtapaBase):
 class RequisitoEtapaResponse(RequisitoEtapaBase):
     model_config = ConfigDict(extra="ignore")
     id: str
+    is_default: Optional[bool] = False
 
 class DocumentoCheck(BaseModel):
+    model_config = ConfigDict(extra="allow")  # Permite campos extras dinâmicos
     # Documentos Pessoais Obrigatórios
     rg_cnh: bool = False
     conta_banco_brasil: bool = False
-    # Etapa Coleta de Documentos
+    extrato_caf: bool = False
     ccu_titulo: bool = False
     saldo_iagro: bool = False
     car: bool = False
@@ -246,6 +258,7 @@ class EtapaBase(BaseModel):
     nome: str
     ordem: int
     ativo: bool = True
+    tipos_projeto_ids: Optional[List[str]] = []  # Lista de IDs dos tipos de projeto (vazio = todos)
 
 class EtapaCreate(EtapaBase):
     pass
@@ -281,6 +294,8 @@ class ProjetoBase(BaseModel):
     instituicao_financeira_id: Optional[str] = None
     instituicao_financeira_nome: Optional[str] = None
     proposta_id: Optional[str] = None  # Link para proposta original
+    agencia: Optional[str] = None
+    conta: Optional[str] = None
 
 class ProjetoCreate(BaseModel):
     cliente_id: str
@@ -289,6 +304,8 @@ class ProjetoCreate(BaseModel):
     tipo_projeto_id: Optional[str] = None
     instituicao_financeira_id: Optional[str] = None
     proposta_id: Optional[str] = None  # Se convertido de uma proposta
+    agencia: Optional[str] = None
+    conta: Optional[str] = None
 
 class ProjetoResponse(ProjetoBase):
     model_config = ConfigDict(extra="ignore")
@@ -659,6 +676,8 @@ async def create_client(client_data: ClientCreate, current_user = Depends(get_au
         "parceiro_nome": parceiro_nome,
         "estado": client_data.estado,
         "cidade": client_data.cidade,
+        "usuario_gov": client_data.usuario_gov,
+        "senha_gov": client_data.senha_gov,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "ultimo_alerta": None,
         "qtd_alertas": 0
@@ -728,7 +747,7 @@ async def update_client(client_id: str, client_data: dict, current_user = Depend
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
     update_data = {}
-    allowed_fields = ["nome_completo", "endereco", "telefone", "data_nascimento", "valor_credito", "parceiro_id", "estado", "cidade"]
+    allowed_fields = ["nome_completo", "endereco", "telefone", "data_nascimento", "valor_credito", "parceiro_id", "estado", "cidade", "usuario_gov", "senha_gov"]
     
     for field in allowed_fields:
         if field in client_data:
@@ -772,6 +791,24 @@ async def list_etapas(current_user = Depends(get_auth_user)):
     etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(100)
     return [EtapaResponse(**e) for e in etapas]
 
+
+@api_router.get("/etapas/por-projeto/{tipo_projeto_id}")
+async def list_etapas_por_tipo_projeto(tipo_projeto_id: str, current_user = Depends(get_auth_user)):
+    """Lista etapas que se aplicam a um tipo de projeto específico"""
+    pass  # user auth verified
+    
+    etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(100)
+    
+    # Filtrar por tipo de projeto (vazio = todos)
+    result = []
+    for etapa in etapas:
+        tipos_ids = etapa.get("tipos_projeto_ids", [])
+        if not tipos_ids or tipo_projeto_id in tipos_ids:
+            result.append(EtapaResponse(**etapa))
+    
+    return result
+
+
 @api_router.post("/etapas", response_model=EtapaResponse)
 async def create_etapa(etapa_data: EtapaCreate, current_user = Depends(get_auth_user)):
     # Auth handled by Depends
@@ -783,7 +820,8 @@ async def create_etapa(etapa_data: EtapaCreate, current_user = Depends(get_auth_
         "id": str(uuid.uuid4()),
         "nome": etapa_data.nome,
         "ordem": etapa_data.ordem,
-        "ativo": etapa_data.ativo
+        "ativo": etapa_data.ativo,
+        "tipos_projeto_ids": etapa_data.tipos_projeto_ids or []
     }
     
     await db.etapas.insert_one(new_etapa)
@@ -800,7 +838,7 @@ async def update_etapa(etapa_id: str, etapa_data: dict, current_user = Depends(g
     if not etapa:
         raise HTTPException(status_code=404, detail="Etapa não encontrada")
     
-    update_data = {k: v for k, v in etapa_data.items() if k in ["nome", "ordem", "ativo"]}
+    update_data = {k: v for k, v in etapa_data.items() if k in ["nome", "ordem", "ativo", "tipos_projeto_ids"]}
     
     if update_data:
         await db.etapas.update_one({"id": etapa_id}, {"$set": update_data})
@@ -836,10 +874,21 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
     if existing_project:
         raise HTTPException(status_code=400, detail="Cliente já possui projeto em andamento")
     
-    # Get first stage
-    first_etapa = await db.etapas.find_one({"ativo": True}, {"_id": 0}, sort=[("ordem", 1)])
-    if not first_etapa:
-        raise HTTPException(status_code=400, detail="Nenhuma etapa configurada")
+    # Get first stage for this project type
+    tipo_projeto_id = project_data.tipo_projeto_id
+    all_etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(100)
+    
+    # Filter etapas by tipo_projeto_id
+    etapas_filtradas = []
+    for etapa in all_etapas:
+        tipos_ids = etapa.get("tipos_projeto_ids", [])
+        if not tipos_ids or tipo_projeto_id in tipos_ids:
+            etapas_filtradas.append(etapa)
+    
+    if not etapas_filtradas:
+        raise HTTPException(status_code=400, detail="Nenhuma etapa configurada para este tipo de projeto")
+    
+    first_etapa = etapas_filtradas[0]
     
     # Get instituicao financeira name if provided
     instituicao_nome = None
@@ -867,6 +916,7 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
         "documentos_check": {
             "rg_cnh": False,
             "conta_banco_brasil": False,
+            "extrato_caf": False,
             "ccu_titulo": False,
             "saldo_iagro": False,
             "car": False,
@@ -897,7 +947,9 @@ async def create_project(project_data: ProjetoCreate, current_user = Depends(get
         "instituicao_financeira_nome": instituicao_nome,
         "proposta_id": project_data.proposta_id,
         "numero_contrato": None,
-        "valor_servico": None
+        "valor_servico": None,
+        "agencia": project_data.agencia,
+        "conta": project_data.conta
     }
     
     await db.projects.insert_one(new_project)
@@ -935,6 +987,9 @@ async def list_projects(
     
     projects = await db.projects.find(query, {"_id": 0}).to_list(1000)
     
+    # Buscar todos os requisitos ativos
+    all_requisitos = await db.requisitos_etapa.find({"ativo": True}, {"_id": 0}).to_list(100)
+    
     result = []
     for proj in projects:
         client = await db.clients.find_one({"id": proj["cliente_id"]}, {"_id": 0})
@@ -945,7 +1000,7 @@ async def list_projects(
         if nome and nome.lower() not in client["nome_completo"].lower():
             continue
         
-        # Check for pending issues
+        # Check for pending issues (manual pendencias)
         tem_pendencia = False
         for etapa in proj.get("historico_etapas", []):
             for pend in etapa.get("pendencias", []):
@@ -953,32 +1008,24 @@ async def list_projects(
                     tem_pendencia = True
                     break
         
-        # Check documents and stage requirements
-        docs = proj.get("documentos_check", {})
-        etapa_nome = proj.get("etapa_atual_nome", "")
-        
-        # Check stage-specific requirements
-        if "Coleta de Documentos" in etapa_nome:
-            if not all([docs.get("rg_cnh"), docs.get("conta_banco_brasil"), docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
-                tem_pendencia = True
-        elif "Desenvolvimento do Projeto" in etapa_nome:
-            if not docs.get("projeto_implementado"):
-                tem_pendencia = True
-        elif "Coletar Assinaturas" in etapa_nome:
-            if not docs.get("projeto_assinado"):
-                tem_pendencia = True
-        elif "Protocolo CENOP" in etapa_nome:
-            if not docs.get("projeto_protocolado"):
-                tem_pendencia = True
-        elif "Instrumento de Crédito" in etapa_nome:
-            if not all([docs.get("assinatura_agencia"), docs.get("upload_contrato")]):
-                tem_pendencia = True
-        elif "GTA e Nota Fiscal" in etapa_nome:
-            if not all([docs.get("gta_emitido"), docs.get("nota_fiscal_emitida")]):
-                tem_pendencia = True
-        elif "Projeto Creditado" in etapa_nome:
-            if not docs.get("comprovante_servico_pago"):
-                tem_pendencia = True
+        # Verificar pendências dinâmicas baseadas nas categorias da etapa atual e tipo de projeto
+        if not tem_pendencia:
+            docs = proj.get("documentos_check", {})
+            etapa_atual_id = proj.get("etapa_atual_id", "")
+            tipo_projeto_id = proj.get("tipo_projeto_id", "")
+            
+            # Filtrar requisitos da etapa atual E do tipo de projeto
+            for req in all_requisitos:
+                if req.get("etapa_id") != etapa_atual_id:
+                    continue
+                # Verificar se o requisito é para este tipo de projeto (vazio = todos)
+                tipos_ids = req.get("tipos_projeto_ids", [])
+                if tipos_ids and tipo_projeto_id not in tipos_ids:
+                    continue
+                # Verificar se o campo está marcado
+                if not docs.get(req["campo"]):
+                    tem_pendencia = True
+                    break
         
         # Apply pendencia filter
         if pendencia is not None and tem_pendencia != pendencia:
@@ -991,6 +1038,39 @@ async def list_projects(
             cliente_telefone=client.get("telefone"),
             tem_pendencia=tem_pendencia
         ))
+    
+    return result
+
+# Listar projetos por cliente
+@api_router.get("/projects/by-client/{client_id}")
+async def list_projects_by_client(client_id: str, current_user = Depends(get_auth_user)):
+    pass  # user auth verified
+    
+    # Verificar se cliente existe
+    client = await db.clients.find_one({"id": client_id}, {"_id": 0})
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    
+    # Buscar todos os projetos do cliente (em andamento e arquivados)
+    projects = await db.projects.find({"cliente_id": client_id}, {"_id": 0}).to_list(100)
+    
+    result = []
+    for proj in projects:
+        result.append({
+            "id": proj["id"],
+            "tipo_projeto": proj.get("tipo_projeto", "N/A"),
+            "etapa_atual_nome": proj.get("etapa_atual_nome", "N/A"),
+            "status": proj.get("status", "em_andamento"),
+            "valor_credito": proj.get("valor_credito", 0),
+            "data_inicio": proj.get("data_inicio", ""),
+            "data_arquivamento": proj.get("data_arquivamento"),
+            "instituicao_financeira_nome": proj.get("instituicao_financeira_nome", "N/A"),
+            "agencia": proj.get("agencia"),
+            "conta": proj.get("conta"),
+        })
+    
+    # Ordenar: em_andamento primeiro, depois por data_inicio descrescente
+    result.sort(key=lambda x: (x["status"] != "em_andamento", x.get("data_inicio", "")), reverse=False)
     
     return result
 
@@ -1013,31 +1093,27 @@ async def get_project(project_id: str, current_user = Depends(get_auth_user)):
                 tem_pendencia = True
                 break
     
-    # Check stage-specific requirements
-    docs = project.get("documentos_check", {})
-    etapa_nome = project.get("etapa_atual_nome", "")
-    
-    if "Coleta de Documentos" in etapa_nome:
-        if not all([docs.get("rg_cnh"), docs.get("conta_banco_brasil"), docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
-            tem_pendencia = True
-    elif "Desenvolvimento do Projeto" in etapa_nome:
-        if not docs.get("projeto_implementado"):
-            tem_pendencia = True
-    elif "Coletar Assinaturas" in etapa_nome:
-        if not docs.get("projeto_assinado"):
-            tem_pendencia = True
-    elif "Protocolo CENOP" in etapa_nome:
-        if not docs.get("projeto_protocolado"):
-            tem_pendencia = True
-    elif "Instrumento de Crédito" in etapa_nome:
-        if not all([docs.get("assinatura_agencia"), docs.get("upload_contrato")]):
-            tem_pendencia = True
-    elif "GTA e Nota Fiscal" in etapa_nome:
-        if not all([docs.get("gta_emitido"), docs.get("nota_fiscal_emitida")]):
-            tem_pendencia = True
-    elif "Projeto Creditado" in etapa_nome:
-        if not docs.get("comprovante_servico_pago"):
-            tem_pendencia = True
+    # Verificar pendências dinâmicas baseadas nas categorias da etapa atual E tipo de projeto
+    if not tem_pendencia:
+        docs = project.get("documentos_check", {})
+        etapa_atual_id = project.get("etapa_atual_id", "")
+        tipo_projeto_id = project.get("tipo_projeto_id", "")
+        
+        # Buscar requisitos ativos da etapa atual
+        requisitos_etapa = await db.requisitos_etapa.find({
+            "etapa_id": etapa_atual_id,
+            "ativo": True
+        }, {"_id": 0}).to_list(100)
+        
+        # Filtrar por tipo de projeto e verificar se estão marcados
+        for req in requisitos_etapa:
+            tipos_ids = req.get("tipos_projeto_ids", [])
+            # Se tipos_ids está vazio, vale para todos os tipos
+            if tipos_ids and tipo_projeto_id not in tipos_ids:
+                continue
+            if not docs.get(req["campo"]):
+                tem_pendencia = True
+                break
     
     return ProjetoResponse(
         **project,
@@ -1060,54 +1136,34 @@ async def advance_project_stage(project_id: str, current_user = Depends(get_auth
     
     # Check for pending requirements based on current stage
     docs = project.get("documentos_check", {})
-    etapa_nome = project.get("etapa_atual_nome", "")
+    etapa_atual_id = project.get("etapa_atual_id", "")
+    tipo_projeto_id = project.get("tipo_projeto_id", "")
     
     # Check pendencies on current stage
     pendencias_etapa = []
     
-    # Check for unresolved pendencies
+    # Check for unresolved manual pendencies
     historico = project.get("historico_etapas", [])
     if historico:
         current_hist = historico[-1]
         for pend in current_hist.get("pendencias", []):
             if not pend.get("resolvida", False):
-                pendencias_etapa.append("Existem pendências não resolvidas")
+                pendencias_etapa.append("Existem pendências manuais não resolvidas")
                 break
     
-    # Check stage-specific requirements
-    if "Coleta de Documentos" in etapa_nome:
-        if not docs.get("rg_cnh"):
-            pendencias_etapa.append("RG ou CNH não verificado")
-        if not docs.get("conta_banco_brasil"):
-            pendencias_etapa.append("Conta Banco do Brasil não verificada")
-        if not docs.get("ccu_titulo"):
-            pendencias_etapa.append("CCU/Título não verificado")
-        if not docs.get("saldo_iagro"):
-            pendencias_etapa.append("Saldo IAGRO não verificado")
-        if not docs.get("car"):
-            pendencias_etapa.append("CAR não verificado")
-    elif "Desenvolvimento do Projeto" in etapa_nome:
-        if not docs.get("projeto_implementado"):
-            pendencias_etapa.append("Projeto não implementado")
-    elif "Coletar Assinaturas" in etapa_nome:
-        if not docs.get("projeto_assinado"):
-            pendencias_etapa.append("Projeto não assinado")
-    elif "Protocolo CENOP" in etapa_nome:
-        if not docs.get("projeto_protocolado"):
-            pendencias_etapa.append("Projeto não protocolado")
-    elif "Instrumento de Crédito" in etapa_nome:
-        if not docs.get("assinatura_agencia"):
-            pendencias_etapa.append("Assinatura na agência pendente")
-        if not docs.get("upload_contrato"):
-            pendencias_etapa.append("Upload do contrato pendente")
-    elif "GTA e Nota Fiscal" in etapa_nome:
-        if not docs.get("gta_emitido"):
-            pendencias_etapa.append("GTA não emitido")
-        if not docs.get("nota_fiscal_emitida"):
-            pendencias_etapa.append("Nota fiscal não emitida")
-    elif "Projeto Creditado" in etapa_nome:
-        if not docs.get("comprovante_servico_pago"):
-            pendencias_etapa.append("Comprovante de serviço não pago")
+    # Verificar categorias dinâmicas da etapa atual E do tipo de projeto
+    requisitos_etapa = await db.requisitos_etapa.find({
+        "etapa_id": etapa_atual_id,
+        "ativo": True
+    }, {"_id": 0}).to_list(100)
+    
+    for req in requisitos_etapa:
+        # Verificar se o requisito é para este tipo de projeto (vazio = todos)
+        tipos_ids = req.get("tipos_projeto_ids", [])
+        if tipos_ids and tipo_projeto_id not in tipos_ids:
+            continue
+        if not docs.get(req["campo"]):
+            pendencias_etapa.append(f"{req['nome']} não verificado")
     
     if pendencias_etapa:
         raise HTTPException(
@@ -1120,15 +1176,27 @@ async def advance_project_stage(project_id: str, current_user = Depends(get_auth
     if not current_etapa:
         raise HTTPException(status_code=400, detail="Etapa atual não encontrada")
     
-    # Get next stage
-    next_etapa = await db.etapas.find_one(
-        {"ordem": {"$gt": current_etapa["ordem"]}, "ativo": True},
-        {"_id": 0},
-        sort=[("ordem", 1)]
-    )
+    # Get all etapas and filter by tipo_projeto
+    all_etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(100)
     
-    if not next_etapa:
-        raise HTTPException(status_code=400, detail="Já está na última etapa")
+    # Filter etapas by tipo_projeto_id
+    etapas_filtradas = []
+    for etapa in all_etapas:
+        tipos_ids = etapa.get("tipos_projeto_ids", [])
+        if not tipos_ids or tipo_projeto_id in tipos_ids:
+            etapas_filtradas.append(etapa)
+    
+    # Find current etapa index and get next
+    current_index = -1
+    for i, etapa in enumerate(etapas_filtradas):
+        if etapa["id"] == project["etapa_atual_id"]:
+            current_index = i
+            break
+    
+    if current_index == -1 or current_index >= len(etapas_filtradas) - 1:
+        raise HTTPException(status_code=400, detail="Já está na última etapa deste tipo de projeto")
+    
+    next_etapa = etapas_filtradas[current_index + 1]
     
     now = datetime.now(timezone.utc)
     
@@ -1321,21 +1389,25 @@ async def update_documents_check(project_id: str, data: dict, current_user = Dep
     
     docs_check = project.get("documentos_check", {})
     
-    # Campos de checklist por etapa
-    check_fields = [
-        "rg_cnh", "conta_banco_brasil",  # Documentos Pessoais Obrigatórios
-        "ccu_titulo", "saldo_iagro", "car",  # Coleta de Documentos
-        "projeto_implementado",  # Desenvolvimento do Projeto
-        "projeto_assinado",  # Coletar Assinaturas
-        "projeto_protocolado",  # Protocolo CENOP
-        "assinatura_agencia", "upload_contrato",  # Instrumento de Crédito
-        "gta_emitido", "nota_fiscal_emitida",  # GTA e Nota Fiscal
-        "comprovante_servico_pago"  # Projeto Creditado
-    ]
+    # Buscar todos os campos dinâmicos (requisitos ativos)
+    dynamic_requisitos = await db.requisitos_etapa.find({"ativo": True}, {"_id": 0}).to_list(100)
+    all_valid_fields = set([r["campo"] for r in dynamic_requisitos])
     
-    for field in check_fields:
-        if field in data:
-            docs_check[field] = data[field]
+    # Campos extras que sempre são aceitos (campos legados fixos)
+    legacy_fields = {
+        "rg_cnh", "conta_banco_brasil", "extrato_caf",
+        "ccu_titulo", "saldo_iagro", "car",
+        "projeto_implementado", "projeto_assinado", "projeto_protocolado",
+        "assinatura_agencia", "upload_contrato",
+        "gta_emitido", "nota_fiscal_emitida",
+        "comprovante_servico_pago"
+    }
+    all_valid_fields.update(legacy_fields)
+    
+    # Atualizar todos os campos de checkbox que estão no request
+    for field, value in data.items():
+        if field in all_valid_fields:
+            docs_check[field] = value
     
     update_data = {"documentos_check": docs_check}
     
@@ -1548,7 +1620,7 @@ async def get_reports_summary(
                     break
         
         docs = proj.get("documentos_check", {})
-        if not all([docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
+        if not all([docs.get("ccu_titulo"), docs.get("saldo_iagro"),docs.get("extrato_caf"), docs.get("car")]):
             tem_pendencia = True
         
         if pendencia is not None and tem_pendencia != pendencia:
@@ -1612,56 +1684,54 @@ async def get_dashboard_stats(current_user = Depends(get_auth_user)):
     
     total_clients = await db.clients.count_documents({})
     
-    # Get projects with pendencias
+    # Get all active requisitos for dynamic pendencia check
+    all_requisitos = await db.requisitos_etapa.find({"ativo": True}, {"_id": 0}).to_list(100)
+    
+    # Get projects with pendencias (em andamento)
     projects = await db.projects.find({"status": "em_andamento"}, {"_id": 0}).to_list(10000)
     com_pendencia = 0
-    total_credito = 0
+    total_credito_andamento = 0
     total_servico = 0
+    total_credito_finalizado = 0
     
-    # Get all projects (including archived) for total service value
+    # Get all projects (including archived) for total service value and finalized credit
     all_projects = await db.projects.find({}, {"_id": 0}).to_list(10000)
     for proj in all_projects:
         if proj.get("valor_servico"):
             total_servico += proj.get("valor_servico", 0)
+        # Somar valor dos projetos arquivados (finalizados)
+        if proj.get("status") == "arquivado":
+            total_credito_finalizado += proj.get("valor_credito", 0)
     
     for proj in projects:
-        client = await db.clients.find_one({"id": proj["cliente_id"]}, {"_id": 0})
-        if client:
-            total_credito += client.get("valor_credito", 0)
+        # Somar valor_credito dos projetos em andamento
+        total_credito_andamento += proj.get("valor_credito", 0)
         
         tem_pendencia = False
+        
+        # Verificar pendências manuais nas etapas
         for etapa in proj.get("historico_etapas", []):
             for pend in etapa.get("pendencias", []):
                 if not pend.get("resolvida", False):
                     tem_pendencia = True
                     break
         
-        # Check pendencias based on current stage
-        docs = proj.get("documentos_check", {})
-        etapa_nome = proj.get("etapa_atual_nome", "")
-        
-        # Verificar pendências de acordo com a etapa atual
-        if "Coleta de Documentos" in etapa_nome:
-            if not all([docs.get("ccu_titulo"), docs.get("saldo_iagro"), docs.get("car")]):
-                tem_pendencia = True
-        elif "Desenvolvimento do Projeto" in etapa_nome:
-            if not docs.get("projeto_implementado"):
-                tem_pendencia = True
-        elif "Coletar Assinaturas" in etapa_nome:
-            if not docs.get("projeto_assinado"):
-                tem_pendencia = True
-        elif "Protocolo CENOP" in etapa_nome:
-            if not docs.get("projeto_protocolado"):
-                tem_pendencia = True
-        elif "Instrumento de Crédito" in etapa_nome:
-            if not all([docs.get("assinatura_agencia"), docs.get("upload_contrato")]):
-                tem_pendencia = True
-        elif "GTA e Nota Fiscal" in etapa_nome:
-            if not all([docs.get("gta_emitido"), docs.get("nota_fiscal_emitida")]):
-                tem_pendencia = True
-        elif "Projeto Creditado" in etapa_nome:
-            if not docs.get("comprovante_servico_pago"):
-                tem_pendencia = True
+        # Verificar pendências dinâmicas baseadas nas categorias da etapa atual E tipo de projeto
+        if not tem_pendencia:
+            docs = proj.get("documentos_check", {})
+            etapa_atual_id = proj.get("etapa_atual_id", "")
+            tipo_projeto_id = proj.get("tipo_projeto_id", "")
+            
+            # Filtrar requisitos da etapa atual e tipo de projeto
+            for req in all_requisitos:
+                if req.get("etapa_id") != etapa_atual_id:
+                    continue
+                tipos_ids = req.get("tipos_projeto_ids", [])
+                if tipos_ids and tipo_projeto_id not in tipos_ids:
+                    continue
+                if not docs.get(req["campo"]):
+                    tem_pendencia = True
+                    break
         
         if tem_pendencia:
             com_pendencia += 1
@@ -1672,8 +1742,9 @@ async def get_dashboard_stats(current_user = Depends(get_auth_user)):
         "projetos_finalizados_mes": archived_this_month,
         "total_clientes": total_clients,
         "projetos_com_pendencia": com_pendencia,
-        "valor_total_credito": total_credito,
-        "valor_total_servico": total_servico
+        "valor_total_credito": total_credito_andamento,
+        "valor_total_servico": total_servico,
+        "valor_credito_finalizado": total_credito_finalizado
     }
 
 @api_router.get("/alerts")
@@ -1878,7 +1949,8 @@ async def create_requisito_etapa(data: RequisitoEtapaCreate, current_user = Depe
         "etapa_id": data.etapa_id,
         "nome": data.nome,
         "campo": data.campo,
-        "ativo": data.ativo
+        "ativo": data.ativo,
+        "tipos_projeto_ids": data.tipos_projeto_ids or []
     }
     await db.requisitos_etapa.insert_one(new_requisito)
     return RequisitoEtapaResponse(**new_requisito)
@@ -1888,7 +1960,7 @@ async def update_requisito_etapa(requisito_id: str, data: dict, current_user = D
     if current_user["role"] == UserRole.ANALISTA:
         raise HTTPException(status_code=403, detail="Permissão negada")
     
-    update_data = {k: v for k, v in data.items() if k in ["nome", "campo", "ativo"]}
+    update_data = {k: v for k, v in data.items() if k in ["nome", "campo", "ativo", "etapa_id", "tipos_projeto_ids"]}
     if update_data:
         await db.requisitos_etapa.update_one({"id": requisito_id}, {"$set": update_data})
     return {"message": "Requisito atualizado"}
@@ -1900,6 +1972,97 @@ async def delete_requisito_etapa(requisito_id: str, current_user = Depends(get_a
     
     await db.requisitos_etapa.update_one({"id": requisito_id}, {"$set": {"ativo": False}})
     return {"message": "Requisito desativado"}
+
+
+@api_router.get("/requisitos-etapa/por-projeto/{tipo_projeto_id}")
+async def list_requisitos_por_tipo_projeto(
+    tipo_projeto_id: str,
+    etapa_id: Optional[str] = None,
+    current_user = Depends(get_auth_user)
+):
+    """Lista requisitos que se aplicam a um tipo de projeto específico"""
+    query = {"ativo": True}
+    if etapa_id:
+        query["etapa_id"] = etapa_id
+    
+    requisitos = await db.requisitos_etapa.find(query, {"_id": 0}).to_list(100)
+    
+    # Filtrar por tipo de projeto (vazio = todos)
+    result = []
+    for req in requisitos:
+        tipos_ids = req.get("tipos_projeto_ids", [])
+        if not tipos_ids or tipo_projeto_id in tipos_ids:
+            result.append(req)
+    
+    return result
+
+
+@api_router.post("/requisitos-etapa/seed-defaults")
+async def seed_default_requisitos(current_user = Depends(get_auth_user)):
+    """Popula os requisitos padrão do sistema na tabela de requisitos_etapa"""
+    if current_user["role"] == UserRole.ANALISTA:
+        raise HTTPException(status_code=403, detail="Permissão negada")
+    
+    # Buscar todas as etapas ativas
+    etapas = await db.etapas.find({"ativo": True}, {"_id": 0}).sort("ordem", 1).to_list(20)
+    etapas_map = {e["nome"]: e["id"] for e in etapas}
+    
+    # Requisitos padrão por etapa
+    default_requisitos = [
+        # Coleta de Documentos
+        {"etapa_nome": "Coleta de Documentos", "nome": "Cópia RG ou CNH", "campo": "rg_cnh"},
+        {"etapa_nome": "Coleta de Documentos", "nome": "Conta no Banco do Brasil", "campo": "conta_banco_brasil"},
+        {"etapa_nome": "Coleta de Documentos", "nome": "Extrato CAF", "campo": "extrato_caf"},
+        {"etapa_nome": "Coleta de Documentos", "nome": "CCU / Título / Contrato / Escritura", "campo": "ccu_titulo"},
+        {"etapa_nome": "Coleta de Documentos", "nome": "Saldo IAGRO", "campo": "saldo_iagro"},
+        {"etapa_nome": "Coleta de Documentos", "nome": "CAR", "campo": "car"},
+        # Desenvolvimento do Projeto
+        {"etapa_nome": "Desenvolvimento do Projeto", "nome": "Projeto Implementado", "campo": "projeto_implementado"},
+        # Coletar Assinaturas
+        {"etapa_nome": "Coletar Assinaturas", "nome": "Projeto Assinado", "campo": "projeto_assinado"},
+        # Protocolo CENOP
+        {"etapa_nome": "Protocolo CENOP", "nome": "Projeto Protocolado", "campo": "projeto_protocolado"},
+        # Instrumento de Crédito
+        {"etapa_nome": "Instrumento de Crédito", "nome": "Assinatura na Agência", "campo": "assinatura_agencia"},
+        {"etapa_nome": "Instrumento de Crédito", "nome": "Upload Contrato", "campo": "upload_contrato"},
+        # GTA e Nota Fiscal
+        {"etapa_nome": "GTA e Nota Fiscal", "nome": "GTA Emitido", "campo": "gta_emitido"},
+        {"etapa_nome": "GTA e Nota Fiscal", "nome": "Nota Fiscal Emitida", "campo": "nota_fiscal_emitida"},
+        # Projeto Creditado
+        {"etapa_nome": "Projeto Creditado", "nome": "Comprovante de Serviço Pago", "campo": "comprovante_servico_pago"},
+    ]
+    
+    created = 0
+    for req in default_requisitos:
+        etapa_id = None
+        # Buscar etapa por nome parcial
+        for etapa_name, eid in etapas_map.items():
+            if req["etapa_nome"] in etapa_name or etapa_name in req["etapa_nome"]:
+                etapa_id = eid
+                break
+        
+        if not etapa_id:
+            continue
+        
+        # Verificar se já existe
+        existing = await db.requisitos_etapa.find_one({"campo": req["campo"]})
+        if existing:
+            continue
+        
+        new_req = {
+            "id": str(uuid.uuid4()),
+            "etapa_id": etapa_id,
+            "nome": req["nome"],
+            "campo": req["campo"],
+            "ativo": True,
+            "is_default": True,  # Marca como requisito padrão do sistema
+        }
+        await db.requisitos_etapa.insert_one(new_req)
+        created += 1
+    
+    return {"message": f"{created} requisitos padrão criados", "total": len(default_requisitos)}
+
+
 
 # ==================== PROPOSTA ROUTES ====================
 
@@ -1988,6 +2151,8 @@ async def create_proposta(data: PropostaCreate, current_user = Depends(get_auth_
         "valor_credito": data.valor_credito,
         "status": "aberta",
         "motivo_desistencia": None,
+        "agencia": data.agencia,
+        "conta": data.conta,
         "created_at": now,
         "updated_at": now,
         "qtd_alertas": 0,
@@ -2095,6 +2260,7 @@ async def converter_proposta_para_projeto(proposta_id: str, current_user = Depen
             "rg_cnh": False,
             "conta_banco_brasil": False,
             "ccu_titulo": False,
+            "extrato_caf": False,
             "saldo_iagro": False,
             "car": False,
             "projeto_implementado": False,

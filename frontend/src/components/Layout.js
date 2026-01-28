@@ -24,7 +24,6 @@ import {
   Leaf,
   LayoutDashboard,
   Users,
-  UserPlus,
   FolderOpen,
   Settings,
   FileText,
@@ -45,7 +44,6 @@ import { cn } from '../lib/utils';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/', roles: ['master', 'admin', 'analista'] },
-  { icon: UserPlus, label: 'Cadastrar Cliente', path: '/clientes/novo', roles: ['master', 'admin', 'analista'] },
   { icon: Users, label: 'Clientes', path: '/clientes', roles: ['master', 'admin', 'analista'] },
   { icon: FileText, label: 'Propostas', path: '/propostas', roles: ['master', 'admin', 'analista'] },
   { icon: FolderOpen, label: 'Iniciar Projeto', path: '/projetos/novo', roles: ['master', 'admin', 'analista'] },
@@ -57,6 +55,7 @@ const adminMenuItems = [
   { icon: Handshake, label: 'Parceiros', path: '/admin/parceiros', roles: ['master', 'admin'] },
   { icon: Users, label: 'Usuários', path: '/admin/usuarios', roles: ['master', 'admin'] },
   { icon: CheckSquare, label: 'Etapas', path: '/admin/etapas', roles: ['master', 'admin'] },
+  { icon: FolderOpen, label: 'Categorias', path: '/admin/categorias', roles: ['master', 'admin'] },
   { icon: Settings, label: 'Configurações', path: '/admin/configuracoes', roles: ['master', 'admin'] },
 ];
 

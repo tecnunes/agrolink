@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { propostasAPI, tiposProjetoAPI, instituicoesAPI, alertsAPI, clientsAPI } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -219,6 +220,7 @@ const PropostaKanbanColumn = ({ title, icon: Icon, propostas, variant, onWhatsAp
 };
 
 const Propostas = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [propostas, setPropostas] = useState([]);
   const [tiposProjeto, setTiposProjeto] = useState([]);
@@ -227,7 +229,7 @@ const Propostas = () => {
   const [showDesistirDialog, setShowDesistirDialog] = useState(false);
   const [selectedProposta, setSelectedProposta] = useState(null);
   const [motivoDesistencia, setMotivoDesistencia] = useState('');
-  const [filterStatus, setFilterStatus] = useState('todas');
+  const [filterStatus, setFilterStatus] = useState('aberta');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('kanban'); // 'table' or 'kanban'
@@ -247,6 +249,8 @@ const Propostas = () => {
     tipo_projeto_id: '',
     instituicao_financeira_id: '',
     valor_credito: '',
+    agencia: '',
+    conta: '',
   });
 
   const fetchData = useCallback(async () => {
@@ -360,6 +364,8 @@ const Propostas = () => {
         tipo_projeto_id: formData.tipo_projeto_id,
         instituicao_financeira_id: formData.instituicao_financeira_id,
         valor_credito: parseFloat(formData.valor_credito),
+        agencia: formData.agencia || null,
+        conta: formData.conta || null,
       });
       
       toast.success('Proposta criada com sucesso!');
@@ -382,14 +388,22 @@ const Propostas = () => {
       tipo_projeto_id: '',
       instituicao_financeira_id: '',
       valor_credito: '',
+      agencia: '',
+      conta: '',
     });
   };
 
   const handleConverter = async (proposta) => {
     try {
-      await propostasAPI.converter(proposta.id);
+      const response = await propostasAPI.converter(proposta.id);
       toast.success('Proposta convertida em projeto!');
-      fetchData();
+      // Redirecionar para o dashboard com o projeto aberto
+      const projectId = response.data?.project_id;
+      if (projectId) {
+        navigate(`/?project=${projectId}`);
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao converter proposta');
     }
@@ -440,6 +454,13 @@ const Propostas = () => {
   };
 
   const filteredPropostas = propostas.filter(p => {
+    // Não mostrar convertidas (já estão no dashboard como projetos)
+    if (p.status === 'convertida') return false;
+    
+    // Filtrar por status se não for 'todas'
+    if (filterStatus !== 'todas' && p.status !== filterStatus) return false;
+    
+    // Filtrar por busca
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
@@ -703,6 +724,32 @@ const Propostas = () => {
                       data-testid="input-valor"
                     />
                   </div>
+                  
+                  {/* Agência e Conta */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="agencia">Agência</Label>
+                      <Input
+                        id="agencia"
+                        name="agencia"
+                        value={formData.agencia}
+                        onChange={handleInputChange}
+                        placeholder="0000"
+                        data-testid="input-agencia"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="conta">Conta</Label>
+                      <Input
+                        id="conta"
+                        name="conta"
+                        value={formData.conta}
+                        onChange={handleInputChange}
+                        placeholder="00000-0"
+                        data-testid="input-conta"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <DialogFooter>
@@ -789,9 +836,7 @@ const Propostas = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todas">Todas</SelectItem>
                     <SelectItem value="aberta">Abertas</SelectItem>
-                    <SelectItem value="convertida">Convertidas</SelectItem>
                     <SelectItem value="desistida">Desistidas</SelectItem>
                   </SelectContent>
                 </Select>
@@ -822,19 +867,6 @@ const Propostas = () => {
                   icon={Clock}
                   variant="warning"
                   propostas={propostas.filter(p => p.status === 'aberta')}
-                  onWhatsApp={openWhatsApp}
-                  onConverter={handleConverter}
-                  onDesistir={(p) => {
-                    setSelectedProposta(p);
-                    setShowDesistirDialog(true);
-                  }}
-                  onDelete={handleDelete}
-                />
-                <PropostaKanbanColumn
-                  title="Convertidas"
-                  icon={CheckCircle}
-                  variant="success"
-                  propostas={propostas.filter(p => p.status === 'convertida')}
                   onWhatsApp={openWhatsApp}
                   onConverter={handleConverter}
                   onDesistir={(p) => {

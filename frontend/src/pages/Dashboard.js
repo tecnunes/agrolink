@@ -79,6 +79,7 @@ const formatCPF = (cpf) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = React.useState(() => new URLSearchParams(window.location.search));
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -94,6 +95,19 @@ const Dashboard = () => {
     pendencia: null,
   });
   const [showFilters, setShowFilters] = useState(false);
+
+  // Abrir projeto automaticamente se vier da URL
+  useEffect(() => {
+    const projectId = searchParams.get('project');
+    if (projectId && projects.length > 0) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        setExpandedProject(projectId);
+        // Limpar o parâmetro da URL sem recarregar a página
+        window.history.replaceState({}, '', '/');
+      }
+    }
+  }, [searchParams, projects]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -175,7 +189,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard
           title="Projetos Ativos"
           value={stats?.total_projetos_ativos || 0}
@@ -197,10 +211,17 @@ const Dashboard = () => {
           variant="warning"
         />
         <StatCard
-          title="Valor Total"
+          title="Valor em Andamento"
           value={formatCurrency(stats?.valor_total_credito || 0)}
           icon={DollarSign}
           description="Crédito em análise"
+          variant="primary"
+        />
+        <StatCard
+          title="Valores Creditados"
+          value={formatCurrency(stats?.valor_credito_finalizado || 0)}
+          icon={CheckCircle}
+          description="Projetos finalizados"
           variant="success"
         />
         <StatCard

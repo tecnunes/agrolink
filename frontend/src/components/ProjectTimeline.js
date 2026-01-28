@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { projectsAPI, filesAPI } from '../lib/api';
+import { projectsAPI, filesAPI, requisitosEtapaAPI, etapasAPI } from '../lib/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -10,6 +10,7 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { ScrollArea } from './ui/scroll-area';
+import { Skeleton } from './ui/skeleton';
 import { toast } from 'sonner';
 import {
   CheckCircle,
@@ -32,7 +33,7 @@ import { cn } from '../lib/utils';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-const ProjectTimeline = ({ project, etapas, onUpdate }) => {
+const ProjectTimeline = ({ project, etapas: etapasFromProps, onUpdate }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [pendenciaDialog, setPendenciaDialog] = useState(false);
@@ -46,10 +47,83 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const [numeroContrato, setNumeroContrato] = useState(project.numero_contrato || '');
   const [valorServico, setValorServico] = useState(project.valor_servico || '');
+  const [requisitos, setRequisitos] = useState([]);
+  const [loadingRequisitos, setLoadingRequisitos] = useState(true);
+  const [etapas, setEtapas] = useState([]);
+  const [loadingEtapas, setLoadingEtapas] = useState(true);
+
+  // Carregar etapas filtradas por tipo de projeto
+  const loadEtapas = useCallback(async () => {
+    try {
+      setLoadingEtapas(true);
+      const tipoProjetoId = project.tipo_projeto_id;
+      if (tipoProjetoId) {
+        // Usar endpoint que filtra por tipo de projeto
+        const response = await etapasAPI.listByTipoProjeto(tipoProjetoId);
+        setEtapas(response.data);
+      } else {
+        // Fallback: usar etapas passadas por props ou listar todas
+        if (etapasFromProps && etapasFromProps.length > 0) {
+          setEtapas(etapasFromProps);
+        } else {
+          const response = await etapasAPI.list();
+          setEtapas(response.data);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar etapas:', error);
+      // Fallback em caso de erro
+      if (etapasFromProps && etapasFromProps.length > 0) {
+        setEtapas(etapasFromProps);
+      }
+    } finally {
+      setLoadingEtapas(false);
+    }
+  }, [project.tipo_projeto_id, etapasFromProps]);
+
+  // Carregar requisitos dinâmicos filtrados por tipo de projeto
+  const loadRequisitos = useCallback(async () => {
+    try {
+      setLoadingRequisitos(true);
+      // Usar o novo endpoint que filtra por tipo de projeto
+      const tipoProjetoId = project.tipo_projeto_id;
+      if (tipoProjetoId) {
+        const response = await requisitosEtapaAPI.listByTipoProjeto(tipoProjetoId);
+        setRequisitos(response.data);
+      } else {
+        // Fallback para listar todos se não tiver tipo de projeto
+        const response = await requisitosEtapaAPI.list();
+        setRequisitos(response.data.filter(r => r.ativo));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar requisitos:', error);
+      // Fallback em caso de erro
+      try {
+        const response = await requisitosEtapaAPI.list();
+        setRequisitos(response.data.filter(r => r.ativo));
+      } catch (e) {
+        console.error('Erro no fallback:', e);
+      }
+    } finally {
+      setLoadingRequisitos(false);
+    }
+  }, [project.tipo_projeto_id]);
+
+  useEffect(() => {
+    loadEtapas();
+  }, [loadEtapas]);
+
+  useEffect(() => {
+    loadRequisitos();
+  }, [loadRequisitos]);
 
   const currentEtapaIndex = etapas.findIndex(e => e.id === project.etapa_atual_id);
   const isLastStage = currentEtapaIndex === etapas.length - 1;
   const currentEtapaNome = project.etapa_atual_nome || '';
+  const currentEtapaId = project.etapa_atual_id || '';
+
+  // Filtrar requisitos para a etapa atual (já filtrados por tipo de projeto no backend)
+  const currentEtapaRequisitos = requisitos.filter(r => r.etapa_id === currentEtapaId);
 
   const getEtapaStatus = (etapa, index) => {
     if (index < currentEtapaIndex) return 'completed';
@@ -64,11 +138,11 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
   const getEtapaDuration = (etapaId) => {
     const historico = project.historico_etapas?.find(h => h.etapa_id === etapaId);
     if (!historico) return null;
-    
+
     if (historico.data_fim) {
       return historico.dias_duracao;
     }
-    
+
     const start = new Date(historico.data_inicio);
     const now = new Date();
     return Math.floor((now - start) / (1000 * 60 * 60 * 24));
@@ -87,201 +161,104 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
     }
   };
 
-  // Render stage-specific checklist
+  // Render stage-specific checklist using dynamic requisitos
   const renderStageChecklist = () => {
     const docs = project.documentos_check || {};
-    
-    // Coleta de Documentos
-    if (currentEtapaNome.includes('Coleta de Documentos')) {
-      const hasPending = !docs.rg_cnh || !docs.conta_banco_brasil || !docs.ccu_titulo || !docs.saldo_iagro || !docs.car;
+
+    // Se está carregando requisitos, mostrar skeleton
+    if (loadingRequisitos) {
       return (
-        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
-          <div>
-            <h4 className="font-medium mb-3">Documentos Pessoais Obrigatórios</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="rg_cnh"
-                  checked={docs.rg_cnh}
-                  onCheckedChange={(v) => handleDocumentCheck('rg_cnh', v)}
-                  data-testid="doc-rg-cnh"
-                />
-                <Label htmlFor="rg_cnh" className="text-sm cursor-pointer">
-                  Cópia RG ou CNH
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="conta_banco_brasil"
-                  checked={docs.conta_banco_brasil}
-                  onCheckedChange={(v) => handleDocumentCheck('conta_banco_brasil', v)}
-                  data-testid="doc-conta-bb"
-                />
-                <Label htmlFor="conta_banco_brasil" className="text-sm cursor-pointer">
-                  Conta no Banco do Brasil
-                </Label>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h4 className="font-medium mb-3">Documentos do Projeto Obrigatórios</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="ccu"
-                  checked={docs.ccu_titulo}
-                  onCheckedChange={(v) => handleDocumentCheck('ccu_titulo', v)}
-                  data-testid="doc-ccu"
-                />
-                <Label htmlFor="ccu" className="text-sm cursor-pointer">
-                  CCU / Título / Contrato / Escritura
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="iagro"
-                  checked={docs.saldo_iagro}
-                  onCheckedChange={(v) => handleDocumentCheck('saldo_iagro', v)}
-                  data-testid="doc-iagro"
-                />
-                <Label htmlFor="iagro" className="text-sm cursor-pointer">
-                  Saldo IAGRO
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="car"
-                  checked={docs.car}
-                  onCheckedChange={(v) => handleDocumentCheck('car', v)}
-                  data-testid="doc-car"
-                />
-                <Label htmlFor="car" className="text-sm cursor-pointer">
-                  CAR
-                </Label>
-              </div>
-            </div>
-          </div>
-          
-          {hasPending && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Documentos pendentes - não é possível avançar para próxima etapa
-            </p>
-          )}
+        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-full" />
         </div>
       );
     }
-    
-    // Desenvolvimento do Projeto
-    if (currentEtapaNome.includes('Desenvolvimento do Projeto')) {
-      return (
-        <div className="p-4 rounded-lg border bg-muted/30">
+
+    // Se não há requisitos para esta etapa
+    if (currentEtapaRequisitos.length === 0) {
+      // Verificar se é uma das etapas especiais com campos extras
+      if (currentEtapaNome.includes('Instrumento de Crédito')) {
+        return (
+          <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+            <h4 className="font-medium">Dados do Contrato</h4>
+            <div className="space-y-2">
+              <Label htmlFor="numero_contrato">Número do Contrato</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="numero_contrato"
+                  placeholder="Digite o número do contrato"
+                  value={numeroContrato}
+                  onChange={(e) => setNumeroContrato(e.target.value)}
+                  data-testid="input-numero-contrato"
+                  className="flex-1"
+                />
+                <Button onClick={handleSaveExtraFields} size="sm" data-testid="save-contrato-btn">
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      if (currentEtapaNome.includes('Projeto Creditado')) {
+        return (
+          <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+            <h4 className="font-medium">Dados do Serviço</h4>
+            <div className="space-y-2">
+              <Label htmlFor="valor_servico">Valor do Serviço (R$)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="valor_servico"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={valorServico}
+                  onChange={(e) => setValorServico(e.target.value)}
+                  data-testid="input-valor-servico"
+                  className="flex-1"
+                />
+                <Button onClick={handleSaveExtraFields} size="sm" data-testid="save-servico-btn">
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      
+      return null;
+    }
+
+    // Verificar se há algum requisito pendente
+    const hasPending = currentEtapaRequisitos.some(req => !docs[req.campo]);
+
+    return (
+      <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+        <div>
           <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="projeto_implementado"
-              checked={docs.projeto_implementado}
-              onCheckedChange={(v) => handleDocumentCheck('projeto_implementado', v)}
-              data-testid="doc-projeto-implementado"
-            />
-            <Label htmlFor="projeto_implementado" className="text-sm cursor-pointer">
-              Projeto Implementado
-            </Label>
+          <div className="flex flex-col gap-3">
+            {currentEtapaRequisitos.map((req) => (
+              <div key={req.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={req.campo}
+                  checked={docs[req.campo] || false}
+                  onCheckedChange={(v) => handleDocumentCheck(req.campo, v)}
+                  data-testid={`doc-${req.campo}`}
+                />
+                <Label htmlFor={req.campo} className="text-sm cursor-pointer">
+                  {req.nome}
+                </Label>
+              </div>
+            ))}
           </div>
-          {!docs.projeto_implementado && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Pendente: Projeto não implementado
-            </p>
-          )}
         </div>
-      );
-    }
-    
-    // Coletar Assinaturas
-    if (currentEtapaNome.includes('Coletar Assinaturas')) {
-      return (
-        <div className="p-4 rounded-lg border bg-muted/30">
-          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="projeto_assinado"
-              checked={docs.projeto_assinado}
-              onCheckedChange={(v) => handleDocumentCheck('projeto_assinado', v)}
-              data-testid="doc-projeto-assinado"
-            />
-            <Label htmlFor="projeto_assinado" className="text-sm cursor-pointer">
-              Projeto Assinado
-            </Label>
-          </div>
-          {!docs.projeto_assinado && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Pendente: Projeto não assinado
-            </p>
-          )}
-        </div>
-      );
-    }
-    
-    // Protocolo CENOP
-    if (currentEtapaNome.includes('Protocolo CENOP')) {
-      return (
-        <div className="p-4 rounded-lg border bg-muted/30">
-          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="projeto_protocolado"
-              checked={docs.projeto_protocolado}
-              onCheckedChange={(v) => handleDocumentCheck('projeto_protocolado', v)}
-              data-testid="doc-projeto-protocolado"
-            />
-            <Label htmlFor="projeto_protocolado" className="text-sm cursor-pointer">
-              Projeto Protocolado
-            </Label>
-          </div>
-          {!docs.projeto_protocolado && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Pendente: Projeto não protocolado
-            </p>
-          )}
-        </div>
-      );
-    }
-    
-    // Instrumento de Crédito
-    if (currentEtapaNome.includes('Instrumento de Crédito')) {
-      const hasPending = !docs.assinatura_agencia || !docs.upload_contrato;
-      return (
-        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
-          <h4 className="font-medium">Requisitos da Etapa</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="assinatura_agencia"
-                checked={docs.assinatura_agencia}
-                onCheckedChange={(v) => handleDocumentCheck('assinatura_agencia', v)}
-                data-testid="doc-assinatura-agencia"
-              />
-              <Label htmlFor="assinatura_agencia" className="text-sm cursor-pointer">
-                Assinatura na Agência
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="upload_contrato"
-                checked={docs.upload_contrato}
-                onCheckedChange={(v) => handleDocumentCheck('upload_contrato', v)}
-                data-testid="doc-upload-contrato"
-              />
-              <Label htmlFor="upload_contrato" className="text-sm cursor-pointer">
-                Upload Contrato
-              </Label>
-            </div>
-          </div>
-          <div className="space-y-2">
+
+        {/* Campos extras para etapas específicas */}
+        {currentEtapaNome.includes('Instrumento de Crédito') && (
+          <div className="space-y-2 pt-3 border-t">
             <Label htmlFor="numero_contrato">Número do Contrato</Label>
             <div className="flex gap-2">
               <Input
@@ -297,73 +274,10 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
               </Button>
             </div>
           </div>
-          {hasPending && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Pendente: Requisitos não completados
-            </p>
-          )}
-        </div>
-      );
-    }
-    
-    // GTA e Nota Fiscal
-    if (currentEtapaNome.includes('GTA e Nota Fiscal')) {
-      const hasPending = !docs.gta_emitido || !docs.nota_fiscal_emitida;
-      return (
-        <div className="p-4 rounded-lg border bg-muted/30">
-          <h4 className="font-medium mb-3">Requisitos da Etapa</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="gta_emitido"
-                checked={docs.gta_emitido}
-                onCheckedChange={(v) => handleDocumentCheck('gta_emitido', v)}
-                data-testid="doc-gta-emitido"
-              />
-              <Label htmlFor="gta_emitido" className="text-sm cursor-pointer">
-                GTA Emitido
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="nota_fiscal_emitida"
-                checked={docs.nota_fiscal_emitida}
-                onCheckedChange={(v) => handleDocumentCheck('nota_fiscal_emitida', v)}
-                data-testid="doc-nota-fiscal-emitida"
-              />
-              <Label htmlFor="nota_fiscal_emitida" className="text-sm cursor-pointer">
-                Nota Fiscal Emitida
-              </Label>
-            </div>
-          </div>
-          {hasPending && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Pendente: Requisitos não completados
-            </p>
-          )}
-        </div>
-      );
-    }
-    
-    // Projeto Creditado
-    if (currentEtapaNome.includes('Projeto Creditado')) {
-      return (
-        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
-          <h4 className="font-medium">Requisitos da Etapa</h4>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="comprovante_servico_pago"
-              checked={docs.comprovante_servico_pago}
-              onCheckedChange={(v) => handleDocumentCheck('comprovante_servico_pago', v)}
-              data-testid="doc-comprovante-servico"
-            />
-            <Label htmlFor="comprovante_servico_pago" className="text-sm cursor-pointer">
-              Comprovante de Serviço Pago
-            </Label>
-          </div>
-          <div className="space-y-2">
+        )}
+
+        {currentEtapaNome.includes('Projeto Creditado') && (
+          <div className="space-y-2 pt-3 border-t">
             <Label htmlFor="valor_servico">Valor do Serviço (R$)</Label>
             <div className="flex gap-2">
               <Input
@@ -381,18 +295,16 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
               </Button>
             </div>
           </div>
-          {!docs.comprovante_servico_pago && (
-            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Pendente: Comprovante não enviado
-            </p>
-          )}
-        </div>
-      );
-    }
-    
-    // Cadastro ou outras etapas sem checklist específico
-    return null;
+        )}
+
+        {hasPending && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />
+            Documentos/requisitos pendentes — pode impedir avanço para próxima etapa
+          </p>
+        )}
+      </div>
+    );
   };
 
   const handleNextStage = async () => {
@@ -564,11 +476,24 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
     <div className="p-6 space-y-6">
       {/* Timeline */}
       <div className="relative">
+        {loadingEtapas ? (
+          <div className="flex items-center justify-between overflow-x-auto pb-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center flex-shrink-0">
+                <div className="flex flex-col items-center">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <Skeleton className="mt-2 h-4 w-16" />
+                </div>
+                {i < 5 && <Skeleton className="w-12 h-0.5 mx-2" />}
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="flex items-center justify-between overflow-x-auto pb-4">
           {etapas.map((etapa, index) => {
             const status = getEtapaStatus(etapa, index);
             const duration = getEtapaDuration(etapa.id);
-            
+
             return (
               <div key={etapa.id} className="flex items-center flex-shrink-0">
                 <div className="flex flex-col items-center">
@@ -615,6 +540,7 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Stage-specific Checklist */}
@@ -730,9 +656,9 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
             WhatsApp
           </Button>
         )}
-        
+
         <div className="flex-1" />
-        
+
         <AlertDialog open={cancelDialog} onOpenChange={setCancelDialog}>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm" data-testid="cancel-project-btn">
@@ -836,7 +762,7 @@ const ProjectTimeline = ({ project, etapas, onUpdate }) => {
               Gerencie os documentos do cliente. Limite: 10MB por arquivo.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* Upload */}
             <div className="flex items-center gap-4">

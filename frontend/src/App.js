@@ -16,6 +16,7 @@ import Reports from './pages/Reports';
 import Partners from './pages/admin/Partners';
 import UsersPage from './pages/admin/Users';
 import Etapas from './pages/admin/Etapas';
+import Categorias from './pages/admin/Categorias';
 import ConfigPage from './pages/admin/Config';
 import Configuracoes from './pages/admin/Configuracoes';
 import EliminarDados from './pages/admin/EliminarDados';
@@ -166,6 +167,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <Etapas />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/categorias"
+        element={
+          <ProtectedRoute adminOnly>
+            <Categorias />
           </ProtectedRoute>
         }
       />
